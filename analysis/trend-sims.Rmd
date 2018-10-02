@@ -1,0 +1,57 @@
+---
+title: "Small trend_filter simulation"
+author: "Matthew Stephens"
+date: "10/2/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Here we do a small simulation to compare numerical 
+accuracy of genlasso vs susie.
+```{r}
+library("susieR")
+library("genlasso")
+nsim= 20
+n = 100
+X = matrix(0,nrow=n,ncol=n-1)
+for(j in 1:(n-1)){
+  for(i in (j+1):n){
+    X[i,j] = 1
+  }
+}
+rmse.tf = rep(0,nsim)
+rmse.s = rep(0,nsim)
+for(i in 1:nsim){
+  mu = seq(0,4,length=n)
+  mu = mu + c(rep(0,n/2),rep(4,n/2))
+  y = mu + rnorm(n)
+  s = susie(X,y,L=10)
+  y.tf = trendfilter(y,ord=0)
+  y.tf.cv = cv.trendfilter(y.tf)
+  rmse.tf[i] = sqrt(mean((mu-y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)])^2))
+  rmse.s[i]=sqrt(mean((mu-predict(s))^2))
+}
+```
+
+Here is a sample result (red=susie, blue = trendfilter)
+```{r}
+plot(y,pch=".")
+lines(mu,col=1,lwd=3)
+lines(predict(s),col=2,lwd=2)
+lines(y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)],col=4,lwd=2)
+```
+
+Here are the RMSEs:
+```{r}
+plot(rmse.tf,rmse.s,xlim=c(0.1,0.4),ylim=c(0.1,0.4))
+abline(a=0,b=1)
+mean(rmse.tf)
+mean(rmse.s)
+```
+
+
+Note: not shown here, but when we increase n to 1000, tf did better than susie. Possibly this is because with n this big
+we need more than L=10 effects to capture the trend. To be investigated further....
