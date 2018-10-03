@@ -1,0 +1,69 @@
+---
+title: "Trend filtering"
+author: "Matthew Stephens"
+date: "April 18, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Here I'm investigating the strategy of 3-stage fit:
+i) run with small residual variance
+ii) estimate residual variance
+iii) estimate prior variance
+
+I'm interested in whether it works in settings both
+where truth is sparse and not sparse.
+
+Because of the strong correlations among the Xs trend filtering seems
+a challenging test case.
+
+Simulate some data and perform trend filtering.
+```{r}
+library("susieR")
+set.seed(1)
+n=1000
+delta = matrix(1,nrow=n,ncol=n)
+for(i in 1:(n-1)){
+  for(j in (i+1):n){
+    delta[i,j] = -1
+  }
+}
+
+beta = c(rep(0,100),rep(1,100),rep(3,100),rep(-2,100),rep(0,600))
+y = beta + rnorm(n)
+delta[,2:1000] = scale(delta[,2:1000])
+s0.1 = susie(delta,y,L=10,residual_variance=0.01,estimate_residual_variance = FALSE)
+s0.2 = susie(delta,y,s_init = s0.1,estimate_residual_variance = TRUE)
+s0.3 = susie(delta,y,s_init = s0.2, estimate_prior_variance = TRUE)
+```
+
+Plot results: the truth is black, and susie estimates are other colors.
+```{r}
+plot(y)
+lines(predict(s0.1),col=4,lwd=3)
+lines(predict(s0.2),col=5,lwd=3)
+lines(predict(s0.3),col=2,lwd=3)
+lines(beta,col=1,lwd=3)
+s0.3$sa2
+```
+
+so we see that the final fit does not use all 10 effects.
+
+Try something harder where the beta increases linearly (so not really sparse!):
+```{r}
+set.seed(1)
+beta = seq(0,2,length=1000)
+y = beta + rnorm(n)
+s1.1 = susie(delta,y,L=10,residual_variance=0.01,estimate_residual_variance = FALSE)
+s1.2 = susie(delta,y,s_init = s1.1,estimate_residual_variance = TRUE)
+s1.3 = susie(delta,y,s_init = s1.2, estimate_prior_variance = TRUE)
+s1.3$sa2
+plot(y)
+lines(predict(s1.3),col=2,lwd=3)
+lines(predict(s1.2),col=3,lwd=3)
+lines(predict(s1.1),col=4,lwd=3)
+lines(beta,col=1,lwd=3)
+```
