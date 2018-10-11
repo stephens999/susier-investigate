@@ -1,0 +1,77 @@
+---
+title: "false-positive"
+author: "stephens999"
+date: "2018-10-11"
+output: workflowr::wflow_html
+---
+
+## Introduction
+
+Here I want to investigate an example found by Gao which
+seemed counter-intuitive [here](https://gaow.github.io/mvarbvs/analysis/20181009_Null_Weight.html)
+
+
+```{r}
+library("susieR")
+dat = readRDS('data/liter_data_4_summarize_ld_1_lm_less_3.rds')$data
+r=1
+fitted = susieR::susie(dat$X, dat$Y[,r], L=5,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE)
+b = dat$true_coef[,r]
+b[which(b!=0)] = 1
+susieR::susie_plot(fitted, y='z', b=b, main = paste('z-scores'))
+```
+
+
+```{r}
+fitted_2 = susieR::susie(dat$X, dat$Y[,r], L=2,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE,verbose=TRUE)
+susieR::susie_plot(fitted_2, y='z', b=b, main = paste('z-scores'))
+
+fitted_3 = susieR::susie(dat$X, dat$Y[,r], L=3,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE,verbose=TRUE)
+susieR::susie_plot(fitted_3, y='z', b=b, main = paste('z-scores'))
+
+fitted_4 = susieR::susie(dat$X, dat$Y[,r], L=4,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE,verbose=TRUE)
+susieR::susie_plot(fitted_4, y='z', b=b, main = paste('z-scores'))
+
+# check for numerical issues by re-initializing
+fitted_5 = susieR::susie(dat$X, dat$Y[,r], s_init=fitted,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE,verbose=TRUE)
+susieR::susie_plot(fitted_5, y='z', b=b, main = paste('z-scores'))
+```
+
+Try initializing to a random point:
+```{r}
+set.seed(1)
+s0 = susie_init_coef(sample(1:1002,5),rep(0.2,5),1002)
+fitted_5_1 = susieR::susie(dat$X, dat$Y[,r], s_init=s0,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE,verbose=TRUE)
+susieR::susie_plot(fitted_5_1, y='z', b=b, main = paste('z-scores'))
+```
+
+```{r}
+set.seed(3)
+s0 = susie_init_coef(sample(1:1002,5),rep(0.2,5),1002)
+fitted_5_3 = susieR::susie(dat$X, dat$Y[,r], s_init=s0,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE,verbose=TRUE)
+susieR::susie_plot(fitted_5_3, y='z', b=b, main = paste('z-scores'))
+```
+
+Conclusion this is an edge case where susie converges to a local optimum.
+
