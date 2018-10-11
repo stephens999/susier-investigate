@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="stephens999" />
+
+<meta name="date" content="2018-10-11" />
+
+<title>false-positive</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-5.0.13/css/fa-svg-with-js.css" rel="stylesheet" />
+<script src="site_libs/font-awesome-5.0.13/js/fontawesome-all.min.js"></script>
+<script src="site_libs/font-awesome-5.0.13/js/fa-v4-shims.min.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">susier-investigate</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/jdblischak/workflowr">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">false-positive</h1>
+<h4 class="author"><em>stephens999</em></h4>
+<h4 class="date"><em>2018-10-11</em></h4>
+
+</div>
+
+
+<p><strong>Last updated:</strong> 2018-10-11</p>
+<strong>workflowr checks:</strong> <small>(Click a bullet for more information)</small>
+<ul>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>R Markdown file:</strong> up-to-date </summary></p>
+<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Environment:</strong> empty </summary></p>
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Seed:</strong> <code>set.seed(20180414)</code> </summary></p>
+<p>The command <code>set.seed(20180414)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Session information:</strong> recorded </summary></p>
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/stephens999/susier-investigate/tree/027522fc5dd15f9cd8b42065d4b948eabf2f7ec7" target="_blank">027522f</a> </summary></p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+    Ignored:    analysis/.Rhistory
+
+Untracked files:
+    Untracked:  analysis/null.Rmd
+    Untracked:  analysis/test.Rmd
+    Untracked:  data/geneMatrix.tsv
+    Untracked:  data/liter_data_4_summarize_ld_1_lm_less_3.rds
+    Untracked:  data/meta.tsv
+    Untracked:  docs/figure/test.Rmd/
+
+</code></pre>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes. </details>
+</li>
+</ul>
+<details> <summary> <small><strong>Expand here to see past versions:</strong></small> </summary>
+<ul>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+File
+</th>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+<th style="text-align:left;">
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/027522fc5dd15f9cd8b42065d4b948eabf2f7ec7/analysis/false-positive.Rmd" target="_blank">027522f</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-11
+</td>
+<td style="text-align:left;">
+workflowr::wflow_publish(“analysis/false-positive.Rmd”)
+</td>
+</tr>
+</tbody>
+</table>
+</ul>
+<p></details></p>
+<hr />
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Here I want to investigate an example found by Gao which seemed counter-intuitive <a href="https://gaow.github.io/mvarbvs/analysis/20181009_Null_Weight.html">here</a></p>
+<pre class="r"><code>library(&quot;susieR&quot;)
+dat = readRDS(&#39;data/liter_data_4_summarize_ld_1_lm_less_3.rds&#39;)$data
+r=1
+fitted = susieR::susie(dat$X, dat$Y[,r], L=5,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE)
+b = dat$true_coef[,r]
+b[which(b!=0)] = 1
+susieR::susie_plot(fitted, y=&#39;z&#39;, b=b, main = paste(&#39;z-scores&#39;))</code></pre>
+<p><img src="figure/false-positive.Rmd/unnamed-chunk-1-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fitted_2 = susieR::susie(dat$X, dat$Y[,r], L=2,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE,verbose=TRUE)</code></pre>
+<pre><code>[1] &quot;objective:-775.804674315936&quot;
+[1] &quot;objective:-773.393185662675&quot;
+[1] &quot;objective:-773.191707918181&quot;
+[1] &quot;objective:-773.190917254031&quot;
+[1] &quot;objective:-773.186268435602&quot;
+[1] &quot;objective:-773.186265526843&quot;
+[1] &quot;objective:-773.185588621469&quot;
+[1] &quot;objective:-773.18558857367&quot;</code></pre>
+<pre class="r"><code>susieR::susie_plot(fitted_2, y=&#39;z&#39;, b=b, main = paste(&#39;z-scores&#39;))</code></pre>
+<p><img src="figure/false-positive.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fitted_3 = susieR::susie(dat$X, dat$Y[,r], L=3,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE,verbose=TRUE)</code></pre>
+<pre><code>[1] &quot;objective:-777.041559108291&quot;
+[1] &quot;objective:-774.509324548277&quot;
+[1] &quot;objective:-773.961066224902&quot;
+[1] &quot;objective:-773.953136355493&quot;
+[1] &quot;objective:-773.514095844314&quot;
+[1] &quot;objective:-773.508147593474&quot;
+[1] &quot;objective:-772.777650203361&quot;
+[1] &quot;objective:-772.768441606546&quot;
+[1] &quot;objective:-771.952401007781&quot;
+[1] &quot;objective:-771.948540235491&quot;
+[1] &quot;objective:-771.397925517707&quot;
+[1] &quot;objective:-771.397355149236&quot;
+[1] &quot;objective:-771.029764399948&quot;
+[1] &quot;objective:-771.029671935801&quot;
+[1] &quot;objective:-770.761206664914&quot;
+[1] &quot;objective:-770.761187984453&quot;
+[1] &quot;objective:-770.565675638033&quot;
+[1] &quot;objective:-770.56567193693&quot;
+[1] &quot;objective:-770.432112374661&quot;
+[1] &quot;objective:-770.432111791117&quot;
+[1] &quot;objective:-770.348044157025&quot;
+[1] &quot;objective:-770.348044145078&quot;
+[1] &quot;objective:-770.298952562478&quot;
+[1] &quot;objective:-770.298952433213&quot;
+[1] &quot;objective:-770.271923744428&quot;
+[1] &quot;objective:-770.271923235457&quot;
+[1] &quot;objective:-770.257633348676&quot;
+[1] &quot;objective:-770.257632445837&quot;
+[1] &quot;objective:-770.250235274869&quot;
+[1] &quot;objective:-770.250234119185&quot;
+[1] &quot;objective:-770.246401538058&quot;
+[1] &quot;objective:-770.246400308769&quot;
+[1] &quot;objective:-770.244362769945&quot;
+[1] &quot;objective:-770.244361608273&quot;
+[1] &quot;objective:-770.243222662345&quot;
+[1] &quot;objective:-770.243221648022&quot;
+[1] &quot;objective:-770.242540676458&quot;
+[1] &quot;objective:-770.242539836104&quot;</code></pre>
+<pre class="r"><code>susieR::susie_plot(fitted_3, y=&#39;z&#39;, b=b, main = paste(&#39;z-scores&#39;))</code></pre>
+<p><img src="figure/false-positive.Rmd/unnamed-chunk-2-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fitted_4 = susieR::susie(dat$X, dat$Y[,r], L=4,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE,verbose=TRUE)</code></pre>
+<pre><code>[1] &quot;objective:-778.561370250422&quot;
+[1] &quot;objective:-775.98919346335&quot;
+[1] &quot;objective:-775.436030616773&quot;
+[1] &quot;objective:-775.42950895518&quot;
+[1] &quot;objective:-775.214065252589&quot;
+[1] &quot;objective:-775.212819504445&quot;
+[1] &quot;objective:-774.925975595293&quot;
+[1] &quot;objective:-774.923200475369&quot;
+[1] &quot;objective:-774.437125036776&quot;
+[1] &quot;objective:-774.431634496869&quot;
+[1] &quot;objective:-773.828541734532&quot;
+[1] &quot;objective:-773.825280539469&quot;
+[1] &quot;objective:-773.312208414142&quot;
+[1] &quot;objective:-773.311468958681&quot;
+[1] &quot;objective:-772.906803025442&quot;
+[1] &quot;objective:-772.906648815486&quot;
+[1] &quot;objective:-772.571742103158&quot;
+[1] &quot;objective:-772.571696375718&quot;
+[1] &quot;objective:-772.294661687051&quot;
+[1] &quot;objective:-772.294636190625&quot;
+[1] &quot;objective:-772.081718638108&quot;
+[1] &quot;objective:-772.081693534575&quot;
+[1] &quot;objective:-771.937313560214&quot;
+[1] &quot;objective:-771.937288153835&quot;
+[1] &quot;objective:-771.852729769974&quot;
+[1] &quot;objective:-771.852710342723&quot;
+[1] &quot;objective:-771.809392480212&quot;
+[1] &quot;objective:-771.809380953072&quot;
+[1] &quot;objective:-771.78929061866&quot;
+[1] &quot;objective:-771.789284561939&quot;
+[1] &quot;objective:-771.780565565054&quot;
+[1] &quot;objective:-771.780562486933&quot;
+[1] &quot;objective:-771.776954730613&quot;
+[1] &quot;objective:-771.776953200611&quot;
+[1] &quot;objective:-771.775523752903&quot;
+[1] &quot;objective:-771.775523029906&quot;
+[1] &quot;objective:-771.774983535671&quot;
+[1] &quot;objective:-771.774983220259&quot;</code></pre>
+<pre class="r"><code>susieR::susie_plot(fitted_4, y=&#39;z&#39;, b=b, main = paste(&#39;z-scores&#39;))</code></pre>
+<p><img src="figure/false-positive.Rmd/unnamed-chunk-2-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># check for numerical issues by re-initializing
+fitted_5 = susieR::susie(dat$X, dat$Y[,r], s_init=fitted,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE,verbose=TRUE)</code></pre>
+<pre><code>[1] &quot;objective:-773.368068721488&quot;
+[1] &quot;objective:-773.368068687787&quot;
+[1] &quot;objective:-773.368042558515&quot;
+[1] &quot;objective:-773.368042553921&quot;</code></pre>
+<pre class="r"><code>susieR::susie_plot(fitted_5, y=&#39;z&#39;, b=b, main = paste(&#39;z-scores&#39;))</code></pre>
+<p><img src="figure/false-positive.Rmd/unnamed-chunk-2-4.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Try initializing to a random point:</p>
+<pre class="r"><code>set.seed(1)
+s0 = susie_init_coef(sample(1:1002,5),rep(0.2,5),1002)
+fitted_5_1 = susieR::susie(dat$X, dat$Y[,r], s_init=s0,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE,verbose=TRUE)</code></pre>
+<pre><code>[1] &quot;objective:-797.851000310095&quot;
+[1] &quot;objective:-796.440186806343&quot;
+[1] &quot;objective:-785.156774100912&quot;
+[1] &quot;objective:-785.069807963874&quot;
+[1] &quot;objective:-782.647606462992&quot;
+[1] &quot;objective:-782.645671310411&quot;
+[1] &quot;objective:-779.189930866962&quot;
+[1] &quot;objective:-779.170405453995&quot;
+[1] &quot;objective:-778.302215777705&quot;
+[1] &quot;objective:-778.301990146647&quot;
+[1] &quot;objective:-777.481830016999&quot;
+[1] &quot;objective:-777.481656058337&quot;
+[1] &quot;objective:-776.924556010392&quot;
+[1] &quot;objective:-776.924043913616&quot;
+[1] &quot;objective:-776.721619672707&quot;
+[1] &quot;objective:-776.721309187996&quot;
+[1] &quot;objective:-776.615079504789&quot;
+[1] &quot;objective:-776.614769813923&quot;
+[1] &quot;objective:-776.471469472555&quot;
+[1] &quot;objective:-776.470626486646&quot;
+[1] &quot;objective:-776.172185197459&quot;
+[1] &quot;objective:-776.169706508781&quot;
+[1] &quot;objective:-775.684336304658&quot;
+[1] &quot;objective:-775.681607683144&quot;
+[1] &quot;objective:-775.18600895616&quot;
+[1] &quot;objective:-775.185194150039&quot;
+[1] &quot;objective:-774.743260411932&quot;
+[1] &quot;objective:-774.743091686268&quot;
+[1] &quot;objective:-774.324523549895&quot;
+[1] &quot;objective:-774.324428823311&quot;
+[1] &quot;objective:-773.946644057355&quot;
+[1] &quot;objective:-773.946463764978&quot;
+[1] &quot;objective:-773.681725859222&quot;
+[1] &quot;objective:-773.681481909657&quot;
+[1] &quot;objective:-773.536976410513&quot;
+[1] &quot;objective:-773.536809773768&quot;
+[1] &quot;objective:-773.459998423707&quot;
+[1] &quot;objective:-773.459911417006&quot;
+[1] &quot;objective:-773.417924129102&quot;
+[1] &quot;objective:-773.417882488994&quot;
+[1] &quot;objective:-773.394736210078&quot;
+[1] &quot;objective:-773.394716188256&quot;
+[1] &quot;objective:-773.382035215326&quot;
+[1] &quot;objective:-773.382025197428&quot;
+[1] &quot;objective:-773.375174830528&quot;
+[1] &quot;objective:-773.375169716772&quot;
+[1] &quot;objective:-773.371552486598&quot;
+[1] &quot;objective:-773.371549903381&quot;
+[1] &quot;objective:-773.369699390254&quot;
+[1] &quot;objective:-773.369698125389&quot;
+[1] &quot;objective:-773.368786946662&quot;
+[1] &quot;objective:-773.368786352628&quot;</code></pre>
+<pre class="r"><code>susieR::susie_plot(fitted_5_1, y=&#39;z&#39;, b=b, main = paste(&#39;z-scores&#39;))</code></pre>
+<p><img src="figure/false-positive.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>set.seed(3)
+s0 = susie_init_coef(sample(1:1002,5),rep(0.2,5),1002)
+fitted_5_3 = susieR::susie(dat$X, dat$Y[,r], s_init=s0,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE,verbose=TRUE)</code></pre>
+<pre><code>[1] &quot;objective:-789.453907011998&quot;
+[1] &quot;objective:-786.593053099166&quot;
+[1] &quot;objective:-782.683643300187&quot;
+[1] &quot;objective:-782.646020945144&quot;
+[1] &quot;objective:-781.747082962017&quot;
+[1] &quot;objective:-781.74452701266&quot;
+[1] &quot;objective:-781.184196478078&quot;
+[1] &quot;objective:-781.183464755331&quot;
+[1] &quot;objective:-780.708332591413&quot;
+[1] &quot;objective:-780.707905045029&quot;
+[1] &quot;objective:-780.289621570411&quot;
+[1] &quot;objective:-780.289450866451&quot;
+[1] &quot;objective:-779.856826692045&quot;
+[1] &quot;objective:-779.856813132957&quot;
+[1] &quot;objective:-778.861245040369&quot;
+[1] &quot;objective:-778.859533586987&quot;
+[1] &quot;objective:-773.051326665178&quot;
+[1] &quot;objective:-773.044120963791&quot;
+[1] &quot;objective:-771.694091037964&quot;
+[1] &quot;objective:-771.692872322107&quot;
+[1] &quot;objective:-771.608712878383&quot;
+[1] &quot;objective:-771.608712811233&quot;
+[1] &quot;objective:-771.5365180326&quot;
+[1] &quot;objective:-771.536516134038&quot;
+[1] &quot;objective:-771.470480750661&quot;
+[1] &quot;objective:-771.470479855569&quot;
+[1] &quot;objective:-771.41435848381&quot;
+[1] &quot;objective:-771.414358462286&quot;
+[1] &quot;objective:-771.372441342393&quot;
+[1] &quot;objective:-771.372438837627&quot;
+[1] &quot;objective:-771.344536660738&quot;
+[1] &quot;objective:-771.344529721232&quot;
+[1] &quot;objective:-771.325705141757&quot;
+[1] &quot;objective:-771.325696024286&quot;
+[1] &quot;objective:-771.311635251229&quot;
+[1] &quot;objective:-771.311626748589&quot;
+[1] &quot;objective:-771.300539207241&quot;
+[1] &quot;objective:-771.300532611694&quot;
+[1] &quot;objective:-771.291882276292&quot;
+[1] &quot;objective:-771.291877683788&quot;
+[1] &quot;objective:-771.285366264078&quot;
+[1] &quot;objective:-771.285363271401&quot;
+[1] &quot;objective:-771.280652069231&quot;
+[1] &quot;objective:-771.280650201455&quot;
+[1] &quot;objective:-771.277368543423&quot;
+[1] &quot;objective:-771.277367414449&quot;
+[1] &quot;objective:-771.275161816582&quot;
+[1] &quot;objective:-771.275161153239&quot;
+[1] &quot;objective:-771.273727380486&quot;
+[1] &quot;objective:-771.273727001745&quot;
+[1] &quot;objective:-771.272823188133&quot;
+[1] &quot;objective:-771.272822978592&quot;</code></pre>
+<pre class="r"><code>susieR::susie_plot(fitted_5_3, y=&#39;z&#39;, b=b, main = paste(&#39;z-scores&#39;))</code></pre>
+<p><img src="figure/false-positive.Rmd/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Conclusion this is an edge case where susie converges to a local optimum.</p>
+</div>
+<div id="session-information" class="section level2">
+<h2>Session information</h2>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 3.5.1 (2018-07-02)
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+Running under: OS X El Capitan 10.11.6
+
+Matrix products: default
+BLAS: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] susieR_0.4.28
+
+loaded via a namespace (and not attached):
+ [1] workflowr_1.1.1    Rcpp_0.12.19       matrixStats_0.54.0
+ [4] lattice_0.20-35    digest_0.6.18      rprojroot_1.3-2   
+ [7] R.methodsS3_1.7.1  grid_3.5.1         backports_1.1.2   
+[10] magrittr_1.5       git2r_0.23.0       evaluate_0.12     
+[13] stringi_1.2.4      whisker_0.3-2      R.oo_1.22.0       
+[16] R.utils_2.7.0      Matrix_1.2-14      rmarkdown_1.10    
+[19] tools_3.5.1        stringr_1.3.1      yaml_2.2.0        
+[22] compiler_3.5.1     htmltools_0.3.6    knitr_1.20        </code></pre>
+</div>
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+<hr>
+<p>
+  This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a>
+  analysis was created with
+  <a href="https://github.com/jdblischak/workflowr">workflowr</a> 1.1.1
+</p>
+<hr>
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
