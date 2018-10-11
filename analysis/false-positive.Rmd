@@ -75,3 +75,14 @@ susieR::susie_plot(fitted_5_3, y='z', b=b, main = paste('z-scores'))
 
 Conclusion this is an edge case where susie converges to a local optimum.
 
+
+Try `susie_auto`:
+```{r}
+fitted_auto = susieR::susie_auto(dat$X, dat$Y[,r])
+fitted_withz = susieR::susie(dat$X, dat$Y[,r], s_init=fitted_auto,
+               estimate_residual_variance=TRUE, 
+               scaled_prior_variance=0.1, compute_univariate_zscore = TRUE,
+               tol=1e-3, track_fit=TRUE)
+susieR::susie_plot(fitted_withz, y='z', b=b, main = paste('z-scores'))
+```
+
