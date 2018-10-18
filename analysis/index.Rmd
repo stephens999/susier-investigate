@@ -7,3 +7,5 @@ output:
 ---
 
 - [An example of a poor convergence](false-positive.html)
+
+- [Changepoint example](changepoint.html)
