@@ -1,0 +1,102 @@
+---
+title: "changepoint"
+author: "stephens999"
+date: "2018-10-18"
+output: workflowr::wflow_html
+---
+
+## Introduction
+
+Compare susier on some example change point problems and the changepoint package.
+
+This example comes from [Killick and Eckley](http://www.lancs.ac.uk/~killick/Pub/KillickEckley2011.pdf)
+```{r}
+library(changepoint)
+set.seed(10)
+m.data=c(rnorm(100,0,1),rnorm(100,1,1),rnorm(100,0,1),rnorm(100,0.2,1)) 
+ts.plot(m.data,xlab="Index")
+```
+
+Here we apply susier to this example. It finds 2 (out of the three) changepoints.
+```{r}
+library("susieR")
+susie_cp = function(y,...){
+  n=length(y)
+  X = matrix(0,nrow=n,ncol=n-1)
+  for(j in 1:(n-1)){
+    for(i in (j+1):n){
+      X[i,j] = 1
+    }
+  }
+  s = susie(X,y,min_abs_corr=0.9,...)
+  return(s)
+}
+
+
+s = susie_cp(m.data)
+ts.plot(m.data,xlab="Index")
+lines(predict(s),col=2,lwd=2)
+```
+
+Note that susieR can provide credible sets for the changepoints.
+Here it finds two, shown in this plot:
+```{r}
+#plot a time series y with confidence sets from susie fit s overlaid
+# does +- 0.5 so that singletons show up
+plot_cp = function(s,y){
+  library("ggplot2")
+  df<-data.frame(x = 1:length(y),y = y)
+  CS = s$sets$cs
+
+  p= ggplot(df) + geom_line(mapping=aes_string(x="x", y="y"))
+  for(i in 1:length(CS)){
+    p = p+  annotate("rect", fill = "red", alpha = 0.5, 
+        xmin = min(CS[[i]])-0.5, xmax = max(CS[[i]])+0.5,
+        ymin = -Inf, ymax = Inf) 
+  }
+  p
+}
+plot_cp(s,m.data)
+```
+
+
+```{r}
+data(Lai2005fig4)
+Lai.default=cpt.mean(Lai2005fig4[,5],method="PELT")
+plot(Lai.default,pch=20,col="grey",cpt.col="black",type="p",xlab="Index") 
+cpts(Lai.default)
+coef(Lai.default)
+```
+
+We see in this case susie seems to "miss" one of the changepoints.
+```{r}
+fitted = susie_cp(Lai2005fig4[,5])
+plot(Lai2005fig4[,5])
+lines(predict(fitted),col=2)
+```
+
+See if this is maybe a convergence issue solved by `susie_auto`:
+```{r}
+susie_cp_auto = function(y,...){
+  n=length(y)
+  X = matrix(0,nrow=n,ncol=n-1)
+  for(j in 1:(n-1)){
+    for(i in (j+1):n){
+      X[i,j] = 1
+    }
+  }
+  s = susie_auto(X,y,min_abs_corr=0.9,...)
+  return(s)
+}
+
+fitted_a = susie_cp_auto(Lai2005fig4[,5])
+plot(Lai2005fig4[,5])
+lines(predict(fitted_a),col=2)
+
+```
+
+Plot confidence sets:
+```{r}
+plot_cp(fitted_a,Lai2005fig4[,5])
+```
+
