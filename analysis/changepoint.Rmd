@@ -7,20 +7,15 @@ output: workflowr::wflow_html
 
 ## Introduction
 
-Compare susier on some example change point problems and the changepoint package.
+Here we try susie on some example change point problems,
+and compare with other methods for change point detection
+in the `changepoint` package (penalized methods), `bcp` package
+(Bayesian MCMC method), and `genlasso` (L1 penalty method).
 
-This example comes from [Killick and Eckley](http://www.lancs.ac.uk/~killick/Pub/KillickEckley2011.pdf)
+First we define some useful functions to run susie on changepoint problems
+and plot the CSs.
 ```{r}
-library(changepoint)
-set.seed(10)
-m.data=c(rnorm(100,0,1),rnorm(100,1,1),rnorm(100,0,1),rnorm(100,0.2,1)) 
-ts.plot(m.data,xlab="Index")
-```
-
-Here we apply susier to this example. It finds 2 (out of the three) changepoints.
-```{r}
-library("susieR")
-susie_cp = function(y,...){
+susie_cp = function(y,auto=FALSE,...){
   n=length(y)
   X = matrix(0,nrow=n,ncol=n-1)
   for(j in 1:(n-1)){
@@ -28,75 +23,295 @@ susie_cp = function(y,...){
       X[i,j] = 1
     }
   }
-  s = susie(X,y,min_abs_corr=0.9,...)
+  if(auto){
+    s = susie_auto(X,y,...)
+  } else {
+    s = susie(X,y,...)
+  }
   return(s)
 }
 
-
-s = susie_cp(m.data)
-ts.plot(m.data,xlab="Index")
-lines(predict(s),col=2,lwd=2)
-```
-
-Note that susieR can provide credible sets for the changepoints.
-Here it finds two, shown in this plot:
-```{r}
 #plot a time series y with confidence sets from susie fit s overlaid
-# does +- 0.5 so that singletons show up
-plot_cp = function(s,y){
+# does - 0.5 so that singletons show up
+# this is a ggplot version
+susie_plot_cp = function(s,y){
   library("ggplot2")
   df<-data.frame(x = 1:length(y),y = y)
   CS = s$sets$cs
 
-  p= ggplot(df) + geom_line(mapping=aes_string(x="x", y="y"))
+  p= ggplot(df) + geom_point(mapping=aes_string(x="x", y="y"))
   for(i in 1:length(CS)){
-    p = p+  annotate("rect", fill = "red", alpha = 0.5, 
+    p = p + annotate("rect", fill = "red", alpha = 0.5, 
         xmin = min(CS[[i]])-0.5, xmax = max(CS[[i]])+0.5,
         ymin = -Inf, ymax = Inf) 
   }
   p
 }
-plot_cp(s,m.data)
+
+# this is just a function to add the changepoints to a base grapics plot
+plot_cs = function(s){
+  CS = s$sets$cs
+  for(i in 1:length(CS)){
+    rect(min(CS[[i]])-0.5,-5,max(CS[[i]])+0.5,5,col = rgb(1,0,0,alpha=0.5),border=NA)
+  }
+}
 ```
 
+## Simple simulated example
+
+This example comes from [Killick and Eckley](http://www.lancs.ac.uk/~killick/Pub/KillickEckley2011.pdf)
+```{r}
+library(changepoint)
+set.seed(10)
+eg1=c(rnorm(100,0,1),rnorm(100,1,1),rnorm(100,0,1),rnorm(100,0.2,1)) 
+ts.plot(eg1,xlab="Index")
+true_mean = c(rep(0,100),rep(1,100),rep(0,100),rep(0.2,100))
+```
+
+Here we apply susie to this example. It finds 2 (out of the three) changepoints.
+```{r}
+library("susieR")
+eg1.s = susie_cp(eg1)
+ts.plot(eg1,xlab="Index")
+lines(predict(eg1.s),col=2,lwd=2)
+plot_cs(eg1.s)
+```
+
+
+Try the bcp package
+```{r}
+library(bcp)
+eg1.bcp<- bcp(eg1)
+plot(eg1.bcp, main = "Univariate Change Point Example")
+legacyplot(eg1.bcp)
+plot(eg1.bcp$posterior.prob[-1], susie_get_PIP(eg1.s))
+plot(eg1.bcp$posterior.mean, predict(eg1.s))
+plot(eg1.bcp$posterior.prob[-1])
+points(susie_get_PIP(eg1.s), col = 2)
+plot(eg1)
+lines(true_mean, col = 2, lwd = 2)
+lines(predict(eg1.s), col = 3, lwd = 2)
+lines(eg1.bcp$posterior.mean, col = 4, lwd = 2)
+mean((eg1.bcp$posterior.mean - true_mean) ^ 2)
+mean((predict(eg1.s) - true_mean) ^ 2)
+
+```
+
+
+## Lai 2005 data
+
+This is a real-data example from the changepoint package.
 
 ```{r}
 data(Lai2005fig4)
-Lai.default=cpt.mean(Lai2005fig4[,5],method="PELT")
-plot(Lai.default,pch=20,col="grey",cpt.col="black",type="p",xlab="Index") 
-cpts(Lai.default)
-coef(Lai.default)
+lai = Lai2005fig4[,5]
+lai.default=cpt.mean(lai,method="PELT")
+lai.s = susie_cp(lai)
+lai.bcp = bcp(lai)
+lai.bcp.long = bcp(lai,mcmc=5000)
 ```
 
-We see in this case susie seems to "miss" one of the changepoints.
+Results from changepoint:
 ```{r}
-fitted = susie_cp(Lai2005fig4[,5])
-plot(Lai2005fig4[,5])
-lines(predict(fitted),col=2)
+plot(lai.default,pch=20,col="grey",cpt.col="black",type="p",xlab="Index") 
+cpts(lai.default)
+coef(lai.default)
 ```
+
+From susie (which seems to "miss" one of the changepoints):
+```{r}
+plot(lai)
+lines(predict(lai.s),col=2)
+lai.s$elbo
+```
+
+From bcp:
+```{r}
+plot(lai)
+lines(lai.bcp$posterior.mean, col = 3, lwd = 2)
+lines(lai.bcp.long$posterior.mean, col = 4, lwd = 2)
+plot(lai.bcp.long$posterior.prob)
+which(lai.bcp.long$posterior.prob>0.99)
+```
+
 
 See if this is maybe a convergence issue solved by `susie_auto`:
 ```{r}
-susie_cp_auto = function(y,...){
-  n=length(y)
-  X = matrix(0,nrow=n,ncol=n-1)
-  for(j in 1:(n-1)){
-    for(i in (j+1):n){
-      X[i,j] = 1
-    }
-  }
-  s = susie_auto(X,y,min_abs_corr=0.9,...)
-  return(s)
-}
-
-fitted_a = susie_cp_auto(Lai2005fig4[,5])
-plot(Lai2005fig4[,5])
-lines(predict(fitted_a),col=2)
-
+lai.s.auto = susie_cp(lai,auto=TRUE)
+plot(lai)
+lines(predict(lai.s.auto),col=2)
+plot_cs(lai.s.auto)
+lai.s.auto$elbo
 ```
 
-Plot confidence sets:
+I wonder if this is an example where the auto version is also
+finding a local optimum (with many changepoints), and that
+the best solution would have fewer?
+Maybe investigate further later.
+
 ```{r}
-plot_cp(fitted_a,Lai2005fig4[,5])
+s0 = susie_init_coef(cpts(lai.default),diff(unlist(coef(lai.default))),length(lai)-1)
+lai.s_b = susie_cp(lai,s_init=s0)
+plot(lai)
+lines(predict(lai.s_b),col=2)
+plot_cs(lai.s_b)
+lai.s_b$elbo
+
+lai.s_c = susie_cp(lai,s_init=lai.s_b,estimate_prior_variance=TRUE)
+plot_cs(lai.s_c)
+plot(lai)
+lines(predict(lai.s_b),col=2,type="s")
+plot_cs(lai.s_c)
+lai.s_c$elbo
+```
+
+Also try trendfilter in the genlasso package:
+```{r}
+library("genlasso")
+lai.tf = trendfilter(lai,ord=0)
+lai.tf.cv = cv.trendfilter(lai.tf)
+opt = which(lai.tf$lambda==lai.tf.cv$lambda.min) #optimal value of lambda
+lai.tf.fit= lai.tf$fit[,opt]
+plot(lai)
+lines(lai.tf.fit,type="s",col=2,lwd=2)
+
+bhat.tf = diff(lai.tf$beta[,opt])
+bhat.tf = ifelse(abs(bhat.tf<1e-5),0,bhat.tf) # make very small values 0
+s0.tf = susie_init_coef(which(bhat.tf!=0),bhat.tf[bhat.tf!=0],length(lai)-1)
+lai.s.tf = susie_cp(lai,s_init = s0.tf,estimate_prior_variance=TRUE)
+lai.s.tf$elbo
+plot(lai)
+lines(predict(lai.s.tf),col=2)
+plot_cs(lai.s.tf)
+```
+
+
+## Example from the BCP package
+
+This one is described as a "hard" example (with one change point) in the bcp examples.
+```{r}
+set.seed(5)
+x <- rep(c(0,1), each=50)
+eg2 <- x +  rnorm(50, sd=1)
+eg2.bcp <- bcp(eg2)
+plot(eg2.bcp, main="Univariate Change Point Example")
+```
+
+Try susie:
+```{r}
+eg2.s = susie_cp(eg2)
+plot(eg2)
+lines(x,lwd=2)
+lines(predict(eg2.s),col=2,lwd=2)
+lines(eg2.bcp$posterior.mean,col=3,lwd=2)
+```
+
+It is a bit wiggly, so try increasing the number of iterations (from default of 500):
+```{r}
+eg2.bcp.long <- bcp(eg2,mcmc = 5000,return.mcmc=TRUE)
+plot(eg2)
+lines(x,lwd=2)
+lines(predict(eg2.s),col=2,lwd=2)
+lines(eg2.bcp.long$posterior.mean,col=3,lwd=2)
+points(eg2.bcp.long$mcmc.means[1000,],col=4,lwd=2)
+points(eg2.bcp.long$mcmc.means[5000,],col=5,lwd=2)
+plot(colMeans(eg2.bcp.long$mcmc.means),col=4)
+lines(eg2.bcp$posterior.mean)
+```
+
+That is suprising that the long and short run agree so closely. But 
+```{r}
+eg2.bcp.short <- bcp(eg2,mcmc=100,return.mcmc=TRUE)
+plot(eg2.bcp.short$posterior.mean,eg2.bcp$posterior.mean)
+```
+
+
+
+## DNA segmentation example from bcp package
+
+This example comes from `demo(coriell)` in the bcp package.
+
+```{r}
+data(coriell)
+chrom11 <- as.vector(na.omit(coriell$Coriell.05296[coriell$Chromosome==11]))
+chrom11.bcp <- bcp(chrom11)
+plot(chrom11.bcp, main="Coriell chromosome 11 (bcp)")
+```
+
+Here it compares results with DNAcopy package (also part of the demo)
+```{r}
+  library("DNAcopy")
+   n <- length(chrom11)
+   cbs <- segment(CNA(chrom11, rep(1, n), 1:n), verbose = 0)
+   cbs.ests <- rep(unlist(cbs$output[6]), unlist(cbs$output[5]))
+   op <- par(mfrow=c(2,1),col.lab="black",col.main="black")
+   op2 <- par(mar=c(0,4,4,2),xaxt="n", cex.axis=0.75)
+   plot(1:n, chrom11.bcp$data[,2], col="grey", pch=20, xlab="Location",
+        ylab="Posterior Mean",
+        main="Coriell chromosome 11 (DNAcopy)")
+   lines(cbs.ests, col="red")
+   lines(chrom11.bcp$posterior.mean, lwd=2)
+   par(op2)
+   op3 <- par(mar=c(5,4,0,2), xaxt="s", cex.axis=0.75)
+   plot(1:n, chrom11.bcp$posterior.prob, type="l", ylim=c(0,1),
+        xlab="Location", ylab="Posterior Probability", main="")
+   for (i in 1:(dim(cbs$output)[1]-1)) {
+     abline(v=cbs$output$loc.end[i], col="red")
+   }
+   par(op3)
+   par(op)
+```
+
+Try susie. Note that this example illustrates a case
+where a variable (here 66) occurs in multiple CSs... something
+we don't yet fully understand the implications of I think.
+```{r}
+  chrom11.s = susie_cp(chrom11)
+  plot(1:n, chrom11, col="grey", pch=20, xlab="Location",
+        ylab="Posterior Mean",
+        main="Coriell chromosome 11 (DNAcopy)")
+  lines(predict(chrom11.s),col=2,lwd=2)
+  chrom11.s$sets
+  abline(v=66)
+  abline(v=51)
+```
+
+An example from the DNAcopy `segment` function:
+```{r}
+set.seed(51)
+true_mean = rep(c(-0.2,0.1,1,-0.5,0.2,-0.5,0.1,-0.2),c(137,87,17,49,29,52,87,42))
+genomdat <- rnorm(500, sd=0.2) + true_mean
+
+plot(genomdat)
+chrom <- rep(1:2,c(290,210))
+maploc <- c(1:290,1:210)
+
+genomdat.seg <- segment(CNA(genomdat, chrom, maploc))
+plot(genomdat.seg)
+genomdat.s = susie_cp(genomdat)
+
+
+plot_cs(genomdat.s)    
+lines(true_mean,col=1,type="s")
+plot(genomdat.s$pip)
+```
+
+```{r}
+genomdat.bcp = bcp(genomdat)
+plot(genomdat.bcp)
+plot(genomdat.bcp$posterior.mean,predict(genomdat.s))
+```
+
+This example from DNAcopy too. (commented out for now as takes too long.)
+```{r}
+# data(coriell)
+# 
+# #Combine into one CNA object to prepare for analysis on Chromosomes 1-23
+# 
+# CNA.object <-CNA(cbind(coriell$Coriell.05296,coriell$Coriell.13330),coriell$Chromosome,coriell$Position,data.type="logratio",sampleid=c("c05296","c13330"))
+# 
+# s = susie_cp(CNA.object$c13330[!is.na(CNA.object$c13330)])
+# plot(CNA.object$c13330[!is.na(CNA.object$c13330)])
+# plot_cs(s)
 ```
 
