@@ -21,6 +21,7 @@ library("L0Learn")
 library("bcp")
 library("changepoint")
 library("ggplot2")
+library("DNAcopy")
 
 
 susie_cp = function(y,auto=FALSE,...){
@@ -74,6 +75,7 @@ get_obj = function(s){
 }
 ```
 
+
 This is a wrapper for L0learn
 ```{r}
 # wrapper to apply L0Learn to changepoint analysis
@@ -101,6 +103,15 @@ tf_cp = function(x){
   opt = which(x.tf$lambda==x.tf.cv$lambda.min) #optimal value of lambda
   yhat= x.tf$fit[,opt]
   return(list(fit=x.tf,yhat =yhat))
+}
+```
+
+Here is a wrapper for `segment` from DNAcopy:
+```{r}
+segment_cp = function(x){
+  res = segment(CNA(x,rep(1,length(x)),1:length(x)))
+  yhat = rep(res$output$seg.mean,diff(c(0,res$output$loc.end)))
+  return(list(fit=res,yhat=yhat))
 }
 ```
 
@@ -139,15 +150,19 @@ apply_methods = function(data){
   d = diff(c(0,cpts(fit.cp),length(data$x))) 
   yhat.cp = rep(coef(fit.cp)$mean,d)
   
+  #segment
+  res.segment = segment_cp(data$x)
+  fit.segment = res.segment$fit
+  yhat.segment = res.segment$yhat
   
-  return(list(fit = list(susie=fit.s,bcp=fit.bcp,l0=fit.l0,tf=fit.tf, cp = fit.cp), yhat = list(susie=yhat.s,bcp = yhat.bcp,l0=yhat.l0,tf=yhat.tf,cp = yhat.cp)))
+  return(list(fit = list(susie=fit.s,bcp=fit.bcp,l0=fit.l0,tf=fit.tf, cp = fit.cp, segment = fit.segment), yhat = list(susie=yhat.s,bcp = yhat.bcp,l0=yhat.l0,tf=yhat.tf,cp = yhat.cp, segment = yhat.segment)))
 }
 
 plot_results = function(res,data){
   plot(data$x,col="gray")
   lines(data$true_mean)
   for(i in 1:length(res$yhat)){
-    lines(res$yhat[[i]],col=(i+1),type="s")
+    lines(res$yhat[[i]],col=(i+1),type="s",lwd=2)
   }
 }
 
@@ -268,13 +283,23 @@ compute_error(eg2.res,eg2)
 ```
 
 
-Try susie initialized from cp:
+Try estimating prior variance of susie initialized from previous results;
+also try initializing from results of `changepoint`.
 ```{r}
+# estimate prior variance
+eg2.s2 = susie_cp(eg2$x,s_init=eg2.res$fit$susie,estimate_prior_variance=TRUE)
+
+# intialize from changepoint result
 s0.cp = susie_init_coef(cpts(eg2.res$fit$cp),diff(unlist(coef(eg2.res$fit$cp))),length(eg2$x)-1)
 
 eg2.s.cp = susie_cp(eg2$x,s_init=s0.cp,estimate_prior_variance=FALSE)
 eg2.s.cp2 = susie_cp(eg2$x,s_init=eg2.s.cp,estimate_prior_variance=TRUE)
+
+
+get_obj(eg2.s.cp2)
+get_obj(eg2.s2)
 mean((predict(eg2.s.cp2)-eg2$true_mean)^2)
+mean((predict(eg2.s2)-eg2$true_mean)^2)
 ```
 
 
@@ -284,74 +309,44 @@ This example comes from `demo(coriell)` in the bcp package.
 
 ```{r}
 data(coriell)
-chrom11 <- as.vector(na.omit(coriell$Coriell.05296[coriell$Chromosome==11]))
-chrom11.bcp <- bcp(chrom11)
-plot(chrom11.bcp, main="Coriell chromosome 11 (bcp)")
+chrom11 <- list(x=as.vector(na.omit(coriell$Coriell.05296[coriell$Chromosome==11])))
+chrom11$true_mean=rep(NA,length(chrom11$x))
+
+chrom11.res = apply_methods(chrom11)
+plot_results(chrom11.res,chrom11)
 ```
 
-Here it compares results with DNAcopy package (also part of the demo)
-```{r}
-  library("DNAcopy")
-   n <- length(chrom11)
-   cbs <- segment(CNA(chrom11, rep(1, n), 1:n), verbose = 0)
-   cbs.ests <- rep(unlist(cbs$output[6]), unlist(cbs$output[5]))
-   op <- par(mfrow=c(2,1),col.lab="black",col.main="black")
-   op2 <- par(mar=c(0,4,4,2),xaxt="n", cex.axis=0.75)
-   plot(1:n, chrom11.bcp$data[,2], col="grey", pch=20, xlab="Location",
-        ylab="Posterior Mean",
-        main="Coriell chromosome 11 (DNAcopy)")
-   lines(cbs.ests, col="red")
-   lines(chrom11.bcp$posterior.mean, lwd=2)
-   par(op2)
-   op3 <- par(mar=c(5,4,0,2), xaxt="s", cex.axis=0.75)
-   plot(1:n, chrom11.bcp$posterior.prob, type="l", ylim=c(0,1),
-        xlab="Location", ylab="Posterior Probability", main="")
-   for (i in 1:(dim(cbs$output)[1]-1)) {
-     abline(v=cbs$output$loc.end[i], col="red")
-   }
-   par(op3)
-   par(op)
-```
 
 Try susie. Note that this example illustrates a case
 where a variable (here 66) occurs in multiple CSs... something
 we don't yet fully understand the implications of I think.
 ```{r}
-  chrom11.s = susie_cp(chrom11)
-  plot(1:n, chrom11, col="grey", pch=20, xlab="Location",
+  plot(chrom11$x, col="grey", pch=20, xlab="Location",
         ylab="Posterior Mean",
         main="Coriell chromosome 11 (DNAcopy)")
-  lines(predict(chrom11.s),col=2,lwd=2)
-  chrom11.s$sets
-  abline(v=66)
-  abline(v=51)
+  lines(predict(chrom11.res$fit$susie),col=2,lwd=2)
+  chrom11.res$fit$susie$sets
+  plot_cs(chrom11.res$fit$susie)
 ```
+
+Compare different objectives:
+```{r}
+
+```
+
 
 An example from the DNAcopy `segment` function:
 ```{r}
 set.seed(51)
 true_mean = rep(c(-0.2,0.1,1,-0.5,0.2,-0.5,0.1,-0.2),c(137,87,17,49,29,52,87,42))
-genomdat <- rnorm(500, sd=0.2) + true_mean
+genomdat = list(x = rnorm(500, sd=0.2) + true_mean, true_mean=true_mean)
 
-plot(genomdat)
-chrom <- rep(1:2,c(290,210))
-maploc <- c(1:290,1:210)
-
-genomdat.seg <- segment(CNA(genomdat, chrom, maploc))
-plot(genomdat.seg)
-genomdat.s = susie_cp(genomdat)
-
-
-plot_cs(genomdat.s)    
-lines(true_mean,col=1,type="s")
-plot(genomdat.s$pip)
+genomdat.res = apply_methods(genomdat)
+plot_results(genomdat.res,genomdat)
+plot_cs(genomdat.res$fit$susie)
+compute_error(genomdat.res,genomdat)
 ```
 
-```{r}
-genomdat.bcp = bcp(genomdat)
-plot(genomdat.bcp)
-plot(genomdat.bcp$posterior.mean,predict(genomdat.s))
-```
 
 This example from DNAcopy too. (commented out for now as takes too long.)
 ```{r}
@@ -364,5 +359,57 @@ This example from DNAcopy too. (commented out for now as takes too long.)
 # s = susie_cp(CNA.object$c13330[!is.na(CNA.object$c13330)])
 # plot(CNA.object$c13330[!is.na(CNA.object$c13330)])
 # plot_cs(s)
+```
+
+# Compare initializations
+
+Here we systematically compare intializing with trendfilter solution
+(L=20) with `susie_auto` and regular `susie` (run in two steps, first estimating residual variance, then estimating prior variance - this is because I am concerned estimating prior variance straight away may miss things, partly because at time of writing `susie_init_coef` may not be quite correct - it sets coefficients based on unstandardized X, but internally X are standardized) 
+```{r}
+#runs susie from both regular trend-filtering initialization
+compare_init = function(x,fit.tf){
+  bhat = fit.tf$beta[,20] #result with 20 changepoints
+  dhat = diff(bhat)
+  dhat = ifelse(abs(dhat)>1e-8, dhat,0)
+  s0.tf = susie_init_coef(which(dhat!=0),dhat[dhat!=0],length(x)-1)
+  s.tf0 = susie_cp(x,s_init=s0.tf,estimate_prior_variance=FALSE)
+  s.tf = susie_cp(x,s_init=s.tf0,estimate_prior_variance=TRUE)
+  
+  s0 = susie_cp(x,estimate_prior_variance = FALSE)
+  s1 = susie_cp(x,estimate_prior_variance = TRUE)
+  
+  s_auto = susie_cp(x,auto=TRUE)
+  return(list(fit = list(tf=s.tf,s=s1,s_auto=s_auto), obj = list(tf=get_obj(s.tf),s = get_obj(s1),s_auto= get_obj(s_auto))))
+}
+```
+
+
+```{r}
+compare_init(eg1$x,eg1.res$fit$tf)$obj
+compare_init(lai$x,lai.res$fit$tf)$obj
+compare_init(lai.sim$x,lai.sim.res$fit$tf)$obj
+
+compare_init(eg2$x,eg2.res$fit$tf)$obj
+c11 = compare_init(chrom11$x,chrom11.res$fit$tf)
+c11$obj
+compare_init(genomdat$x,genomdat.res$fit$tf)$obj
+
+```
+
+Follow up on chrom11. It seems that the susie auto fit works well here.
+The tf initialization induces extra changepoints that don't have that good support, and susie struggles to lose these. This illustrates that
+failing to lose fits can be as problematic as failing to find them...
+```{r}
+plot(chrom11$x)
+lines(predict(c11$fit$tf))
+lines(predict(c11$fit$s),col=2)
+lines(predict(c11$fit$s_auto),col=3)
+
+plot_cs(c11$fit$tf)
+plot_cs(c11$fit$s)
+plot_cs(c11$fit$s_auto)
+
+lines(chrom11.res$fit$bcp$posterior.mean)
+plot(chrom11.res$fit$bcp$posterior.prob)
 ```
 
