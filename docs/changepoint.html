@@ -323,7 +323,7 @@ div.section {
 </div>
 
 
-<p><strong>Last updated:</strong> 2018-10-19</p>
+<p><strong>Last updated:</strong> 2018-10-22</p>
 <strong>workflowr checks:</strong> <small>(Click a bullet for more information)</small>
 <ul>
 <li>
@@ -347,7 +347,7 @@ div.section {
 </details>
 </li>
 <li>
-<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/stephens999/susier-investigate/tree/744b917ae959fe305f70e39ca209f12ce184b593" target="_blank">744b917</a> </summary></p>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/stephens999/susier-investigate/tree/d6932aa2c42c6080a1144d4f78821854eefb4eb3" target="_blank">d6932aa</a> </summary></p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 <pre><code>
 Ignored files:
@@ -357,11 +357,13 @@ Ignored files:
     Ignored:    analysis/.Rhistory
 
 Untracked files:
+    Untracked:  analysis/cp_convergence.Rmd
     Untracked:  analysis/null.Rmd
     Untracked:  analysis/test.Rmd
     Untracked:  data/geneMatrix.tsv
     Untracked:  data/liter_data_4_summarize_ld_1_lm_less_3.rds
     Untracked:  data/meta.tsv
+    Untracked:  docs/figure/cp_convergence.Rmd/
     Untracked:  docs/figure/test.Rmd/
 
 </code></pre>
@@ -391,6 +393,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/d6932aa2c42c6080a1144d4f78821854eefb4eb3/analysis/changepoint.Rmd" target="_blank">d6932aa</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-22
+</td>
+<td style="text-align:left;">
+workflowr::wflow_publish(“analysis/changepoint.Rmd”)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+html
+</td>
+<td style="text-align:left;">
+<a href="https://cdn.rawgit.com/stephens999/susier-investigate/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/changepoint.html" target="_blank">07cb570</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-19
+</td>
+<td style="text-align:left;">
+Build site.
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 Rmd
@@ -449,9 +485,36 @@ workflowr::wflow_publish(“analysis/changepoint.Rmd”)
 <hr />
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>Here we try susie on some example change point problems, and compare with other methods for change point detection in the <code>changepoint</code> package (penalized methods), <code>bcp</code> package (Bayesian MCMC method), and <code>genlasso</code> (L1 penalty method).</p>
-<p>First we define some useful functions to run susie on changepoint problems and plot the CSs.</p>
-<pre class="r"><code>susie_cp = function(y,auto=FALSE,...){
+<p>Here we try susie on some example change point problems, and compare with other methods for change point detection in the <code>changepoint</code> package (penalized methods), <code>bcp</code> package (Bayesian MCMC method), <code>genlasso</code> (L1 penalty method), and <code>L0learn</code> (L0 penalty).</p>
+<p>First we define some useful functions to run susie and other methods on changepoint problems and plot the CSs.</p>
+<pre class="r"><code>library(&quot;susieR&quot;)
+library(&quot;genlasso&quot;)</code></pre>
+<pre><code>Loading required package: Matrix</code></pre>
+<pre><code>Loading required package: igraph</code></pre>
+<pre><code>
+Attaching package: &#39;igraph&#39;</code></pre>
+<pre><code>The following objects are masked from &#39;package:stats&#39;:
+
+    decompose, spectrum</code></pre>
+<pre><code>The following object is masked from &#39;package:base&#39;:
+
+    union</code></pre>
+<pre class="r"><code>library(&quot;L0Learn&quot;)
+library(&quot;bcp&quot;)</code></pre>
+<pre><code>Loading required package: grid</code></pre>
+<pre class="r"><code>library(&quot;changepoint&quot;)</code></pre>
+<pre><code>Loading required package: zoo</code></pre>
+<pre><code>
+Attaching package: &#39;zoo&#39;</code></pre>
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    as.Date, as.Date.numeric</code></pre>
+<pre><code>Successfully loaded changepoint package version 2.2.2
+ NOTE: Predefined penalty values changed in version 2.2.  Previous penalty values with a postfix 1 i.e. SIC1 are now without i.e. SIC and previous penalties without a postfix i.e. SIC are now with a postfix 0 i.e. SIC0. See NEWS and help files for further details.</code></pre>
+<pre class="r"><code>library(&quot;ggplot2&quot;)
+
+
+susie_cp = function(y,auto=FALSE,...){
   n=length(y)
   X = matrix(0,nrow=n,ncol=n-1)
   for(j in 1:(n-1)){
@@ -471,7 +534,7 @@ workflowr::wflow_publish(“analysis/changepoint.Rmd”)
 # does - 0.5 so that singletons show up
 # this is a ggplot version
 susie_plot_cp = function(s,y){
-  library(&quot;ggplot2&quot;)
+
   df&lt;-data.frame(x = 1:length(y),y = y)
   CS = s$sets$cs
 
@@ -488,27 +551,101 @@ susie_plot_cp = function(s,y){
 plot_cs = function(s){
   CS = s$sets$cs
   for(i in 1:length(CS)){
-    rect(min(CS[[i]])-0.5,-5,max(CS[[i]])+0.5,5,col = rgb(1,0,0,alpha=0.5),border=NA)
+    rect(min(CS[[i]]),-5,max(CS[[i]])+1,5,col = rgb(1,0,0,alpha=0.5),border=NA)
   }
+}
+
+#ggplot function for changepoint results
+plot_cp = function(df){
+  #unwritten!
+}
+
+get_obj = function(s){
+  return(s$elbo[length(s$elbo)])
+}</code></pre>
+<p>This is a wrapper for L0learn</p>
+<pre class="r"><code># wrapper to apply L0Learn to changepoint analysis
+#coordinate ascent may not work so well so I use the slower/better algorithm, CDPSI
+l0_cp = function(y,algorithm=&quot;CDPSI&quot;,maxSuppSize=20,...){ 
+  n=length(y)
+  X = matrix(0,nrow=n,ncol=n-1)
+  for(j in 1:(n-1)){
+    for(i in (j+1):n){
+      X[i,j] = 1
+    }
+  }
+  y.l0.cv = L0Learn.cvfit(X,y,nFolds=5,seed=1,penalty=&quot;L0&quot;,maxSuppSize = maxSuppSize,algorithm=algorithm,...) 
+  opt = which.min(y.l0.cv$cvMeans[[1]])
+  yhat = predict(y.l0.cv, newx = X,lambda=y.l0.cv$fit$lambda[[1]][opt])
+  return(list(fit = y.l0.cv$fit,yhat=yhat))
+}</code></pre>
+<p>Here is a wrapper for trendfiltering:</p>
+<pre class="r"><code>tf_cp = function(x){
+  x.tf = trendfilter(x,ord=0)
+  x.tf.cv = cv.trendfilter(x.tf)
+  opt = which(x.tf$lambda==x.tf.cv$lambda.min) #optimal value of lambda
+  yhat= x.tf$fit[,opt]
+  return(list(fit=x.tf,yhat =yhat))
 }</code></pre>
 </div>
 <div id="simple-simulated-example" class="section level2">
 <h2>Simple simulated example</h2>
 <p>This example comes from <a href="http://www.lancs.ac.uk/~killick/Pub/KillickEckley2011.pdf">Killick and Eckley</a></p>
-<pre class="r"><code>library(changepoint)</code></pre>
-<pre><code>Loading required package: zoo</code></pre>
-<pre><code>
-Attaching package: &#39;zoo&#39;</code></pre>
-<pre><code>The following objects are masked from &#39;package:base&#39;:
-
-    as.Date, as.Date.numeric</code></pre>
-<pre><code>Successfully loaded changepoint package version 2.2.2
- NOTE: Predefined penalty values changed in version 2.2.  Previous penalty values with a postfix 1 i.e. SIC1 are now without i.e. SIC and previous penalties without a postfix i.e. SIC are now with a postfix 0 i.e. SIC0. See NEWS and help files for further details.</code></pre>
 <pre class="r"><code>set.seed(10)
-eg1=c(rnorm(100,0,1),rnorm(100,1,1),rnorm(100,0,1),rnorm(100,0.2,1)) 
-ts.plot(eg1,xlab=&quot;Index&quot;)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of unnamed-chunk-2-1.png:</em></summary>
+eg1=list()
+eg1$x=c(rnorm(100,0,1),rnorm(100,1,1),rnorm(100,0,1),rnorm(100,0.2,1)) 
+eg1$true_mean = c(rep(0,100),rep(1,100),rep(0,100),rep(0.2,100))</code></pre>
+<pre class="r"><code>apply_methods = function(data){
+  # Susie
+  fit.s = susie_cp(data$x)
+  yhat.s = predict(fit.s)
+  
+  # bcp
+  fit.bcp = bcp(data$x)
+  yhat.bcp = fit.bcp$posterior.mean
+  
+  # L0Learn
+  res.l0= l0_cp(data$x)
+  fit.l0 = res.l0$fit
+  yhat.l0 = res.l0$yhat
+  
+  # trendfilter
+  res.tf = tf_cp(data$x)
+  fit.tf = res.tf$fit
+  yhat.tf = res.tf$yhat
+  
+  # changepoint
+  fit.cp = cpt.mean(data$x,method=&quot;PELT&quot;)
+  d = diff(c(0,cpts(fit.cp),length(data$x))) 
+  yhat.cp = rep(coef(fit.cp)$mean,d)
+  
+  
+  return(list(fit = list(susie=fit.s,bcp=fit.bcp,l0=fit.l0,tf=fit.tf, cp = fit.cp), yhat = list(susie=yhat.s,bcp = yhat.bcp,l0=yhat.l0,tf=yhat.tf,cp = yhat.cp)))
+}
+
+plot_results = function(res,data){
+  plot(data$x,col=&quot;gray&quot;)
+  lines(data$true_mean)
+  for(i in 1:length(res$yhat)){
+    lines(res$yhat[[i]],col=(i+1),type=&quot;s&quot;)
+  }
+}
+
+compute_error = function(res,data){
+  mse=rep(0,length(res$yhat))
+  for(i in 1:length(res$yhat)){
+    mse[i] = mean((res$yhat[[i]]-data$true_mean)^2)
+  }
+  names(mse) &lt;- names(res$yhat)
+  mse
+}
+
+eg1.res = apply_methods(eg1)</code></pre>
+<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
+<pre class="r"><code>plot_results(eg1.res,eg1)
+plot_cs(eg1.res$fit$susie)</code></pre>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-5-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
 <thead>
 <tr>
@@ -526,7 +663,7 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
-<a href="https://github.com/stephens999/susier-investigate/blob/a45f3cde47160dd9ac379b6529871827faf2301e/docs/figure/changepoint.Rmd/unnamed-chunk-2-1.png" target="_blank">a45f3cd</a>
+<a href="https://github.com/stephens999/susier-investigate/blob/a45f3cde47160dd9ac379b6529871827faf2301e/docs/figure/changepoint.Rmd/unnamed-chunk-5-1.png" target="_blank">a45f3cd</a>
 </td>
 <td style="text-align:left;">
 stephens999
@@ -538,110 +675,11 @@ stephens999
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>true_mean = c(rep(0,100),rep(1,100),rep(0,100),rep(0.2,100))</code></pre>
-<p>Here we apply susie to this example. It finds 2 (out of the three) changepoints.</p>
-<pre class="r"><code>library(&quot;susieR&quot;)
-eg1.s = susie_cp(eg1)
-ts.plot(eg1,xlab=&quot;Index&quot;)
-lines(predict(eg1.s),col=2,lwd=2)
-plot_cs(eg1.s)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of unnamed-chunk-3-1.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-<a href="https://github.com/stephens999/susier-investigate/blob/a45f3cde47160dd9ac379b6529871827faf2301e/docs/figure/changepoint.Rmd/unnamed-chunk-3-1.png" target="_blank">a45f3cd</a>
-</td>
-<td style="text-align:left;">
-stephens999
-</td>
-<td style="text-align:left;">
-2018-10-18
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<p>Try the bcp package</p>
-<pre class="r"><code>library(bcp)</code></pre>
-<pre><code>Loading required package: grid</code></pre>
-<pre class="r"><code>eg1.bcp&lt;- bcp(eg1)
-plot(eg1.bcp, main = &quot;Univariate Change Point Example&quot;)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of unnamed-chunk-4-1.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-<a href="https://github.com/stephens999/susier-investigate/blob/a45f3cde47160dd9ac379b6529871827faf2301e/docs/figure/changepoint.Rmd/unnamed-chunk-4-1.png" target="_blank">a45f3cd</a>
-</td>
-<td style="text-align:left;">
-stephens999
-</td>
-<td style="text-align:left;">
-2018-10-18
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>legacyplot(eg1.bcp)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-4-2.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>plot(eg1.bcp$posterior.prob[-1], susie_get_PIP(eg1.s))</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-4-3.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>plot(eg1.bcp$posterior.mean, predict(eg1.s))</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-4-4.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>plot(eg1.bcp$posterior.prob[-1])
-points(susie_get_PIP(eg1.s), col = 2)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-4-5.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>plot(eg1)
-lines(true_mean, col = 2, lwd = 2)
-lines(predict(eg1.s), col = 3, lwd = 2)
-lines(eg1.bcp$posterior.mean, col = 4, lwd = 2)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-4-6.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>mean((eg1.bcp$posterior.mean - true_mean) ^ 2)</code></pre>
-<pre><code>[1] 0.0366996</code></pre>
-<pre class="r"><code>mean((predict(eg1.s) - true_mean) ^ 2)</code></pre>
-<pre><code>[1] 0.03081035</code></pre>
-</div>
-<div id="lai-2005-data" class="section level2">
-<h2>Lai 2005 data</h2>
-<p>This is a real-data example from the changepoint package.</p>
-<pre class="r"><code>data(Lai2005fig4)
-lai = Lai2005fig4[,5]
-lai.default=cpt.mean(lai,method=&quot;PELT&quot;)
-lai.s = susie_cp(lai)
-lai.bcp = bcp(lai)
-lai.bcp.long = bcp(lai,mcmc=5000)</code></pre>
-<p>Results from changepoint:</p>
-<pre class="r"><code>plot(lai.default,pch=20,col=&quot;grey&quot;,cpt.col=&quot;black&quot;,type=&quot;p&quot;,xlab=&quot;Index&quot;) </code></pre>
+<pre class="r"><code>compute_error(eg1.res,eg1)</code></pre>
+<pre><code>     susie        bcp         l0         tf         cp 
+0.03081035 0.03669960 0.22505358 0.04564223 0.03673359 </code></pre>
+<p>Compare PIPs of bcp and susie:</p>
+<pre class="r"><code>plot(eg1.res$fit$bcp$posterior.prob[-1], susie_get_PIP(eg1.res$fit$susie))</code></pre>
 <p><img src="figure/changepoint.Rmd/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of unnamed-chunk-6-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -661,6 +699,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-6-1.png" target="_blank">07cb570</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 <a href="https://github.com/stephens999/susier-investigate/blob/a45f3cde47160dd9ac379b6529871827faf2301e/docs/figure/changepoint.Rmd/unnamed-chunk-6-1.png" target="_blank">a45f3cd</a>
 </td>
 <td style="text-align:left;">
@@ -673,14 +722,20 @@ stephens999
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>cpts(lai.default)</code></pre>
-<pre><code>[1]  81  85  89  96 123 133</code></pre>
-<pre class="r"><code>coef(lai.default)</code></pre>
-<pre><code>$mean
-[1] 0.2468910 4.6699210 0.4495538 4.5902489 0.2079891 4.2913844 0.2291286</code></pre>
-<p>From susie (which seems to “miss” one of the changepoints):</p>
-<pre class="r"><code>plot(lai)
-lines(predict(lai.s),col=2)</code></pre>
+<pre class="r"><code>plot(eg1.res$fit$bcp$posterior.prob[-1],col=3)
+points(susie_get_PIP(eg1.res$fit$susie),col=2)</code></pre>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-6-2.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="lai-2005-data" class="section level2">
+<h2>Lai 2005 data</h2>
+<p>This is a real-data example from the changepoint package. Of course we do not know the truth here so cannot compute errors. But it is an interesting example because susie (run from default 0 initialization) misses a changepoint.</p>
+<pre class="r"><code>data(Lai2005fig4)
+lai = list(x=Lai2005fig4[,5],true_mean = rep(NA,length(Lai2005fig4[,5])))
+
+lai.res=apply_methods(lai)</code></pre>
+<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
+<pre class="r"><code>plot_results(lai.res,lai)
+plot_cs(lai.res$fit$susie)</code></pre>
 <p><img src="figure/changepoint.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of unnamed-chunk-7-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -700,6 +755,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-7-1.png" target="_blank">07cb570</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 <a href="https://github.com/stephens999/susier-investigate/blob/a45f3cde47160dd9ac379b6529871827faf2301e/docs/figure/changepoint.Rmd/unnamed-chunk-7-1.png" target="_blank">a45f3cd</a>
 </td>
 <td style="text-align:left;">
@@ -712,150 +778,203 @@ stephens999
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>lai.s$elbo</code></pre>
-<pre><code> [1]      -Inf -345.8855 -340.9082 -332.0314 -320.1672 -310.2676 -302.9654
- [8] -297.6058 -293.6073 -290.5957 -288.3099 -286.5210 -284.8860 -282.7483
-[15] -280.1089 -278.0768 -276.6409 -275.5822 -274.7859 -274.1864 -273.7356
-[22] -273.3947 -273.1329 -272.9270 -272.7608 -272.6239 -272.5094 -272.4130
-[29] -272.3319 -272.2641 -272.2079 -272.1621 -272.1250 -272.0952 -272.0716
-[36] -272.0529 -272.0381 -272.0265 -272.0175 -272.0105 -272.0051 -272.0010
-[43] -271.9979 -271.9955 -271.9938 -271.9925 -271.9915</code></pre>
-<p>From bcp:</p>
-<pre class="r"><code>plot(lai)
-lines(lai.bcp$posterior.mean, col = 3, lwd = 2)
-lines(lai.bcp.long$posterior.mean, col = 4, lwd = 2)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>plot(lai.bcp.long$posterior.prob)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-8-2.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>which(lai.bcp.long$posterior.prob&gt;0.99)</code></pre>
-<pre><code>[1]  53  54  81  85  89  96 123 133</code></pre>
-<p>See if this is maybe a convergence issue solved by <code>susie_auto</code>:</p>
-<pre class="r"><code>lai.s.auto = susie_cp(lai,auto=TRUE)
-plot(lai)
-lines(predict(lai.s.auto),col=2)
-plot_cs(lai.s.auto)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>lai.s.auto$elbo</code></pre>
-<pre><code> [1]      -Inf -245.7007 -245.6279 -245.5400 -245.4322 -245.2919 -245.0801
- [8] -244.6691 -243.6458 -242.1472 -241.9562 -241.8816 -241.8067 -241.7264
-[15] -241.6426 -241.5578 -241.4743 -241.3936 -241.3169 -241.2447 -241.1771
-[22] -241.1140 -241.0552 -241.0004 -240.9494 -240.9017 -240.8572 -240.8154
-[29] -240.7762 -240.7393 -240.7045 -240.6717 -240.6407 -240.6114 -240.5836
-[36] -240.5572 -240.5322 -240.5084 -240.4858 -240.4643 -240.4439 -240.4244
-[43] -240.4059 -240.3882 -240.3714 -240.3554 -240.3401 -240.3255 -240.3116
-[50] -240.2984 -240.2858 -240.2737 -240.2622 -240.2513 -240.2408 -240.2309</code></pre>
-<p>I wonder if this is an example where the auto version is also finding a local optimum (with many changepoints), and that the best solution would have fewer? Maybe investigate further later.</p>
-<pre class="r"><code>s0 = susie_init_coef(cpts(lai.default),diff(unlist(coef(lai.default))),length(lai)-1)
-lai.s_b = susie_cp(lai,s_init=s0)
-plot(lai)
-lines(predict(lai.s_b),col=2)
-plot_cs(lai.s_b)
-lai.s_b$elbo</code></pre>
-<pre><code> [1]      -Inf -476.7494 -429.8976 -383.4484 -348.1532 -320.5661 -302.5209
- [8] -289.8122 -280.1721 -272.7621 -267.0347 -262.5531 -258.9807 -256.0733
-[15] -253.6597 -251.6212 -249.8752 -248.3625 -247.0400 -245.8753 -244.8437
-[22] -243.9256 -243.1053 -242.3700 -241.7091 -241.1139 -240.5767 -240.0911
-[29] -239.6517 -239.2535 -238.8925 -238.5649 -238.2676 -237.9977 -237.7527
-[36] -237.5303 -237.3285 -237.1456 -236.9799 -236.8299 -236.6943 -236.5718
-[43] -236.4613 -236.3618 -236.2722 -236.1918 -236.1197 -236.0551 -235.9974
-[50] -235.9458 -235.8999 -235.8590 -235.8227 -235.7905 -235.7620 -235.7367
-[57] -235.7145 -235.6948 -235.6775 -235.6623 -235.6490 -235.6372 -235.6270
-[64] -235.6180 -235.6102 -235.6034 -235.5974 -235.5922 -235.5877 -235.5838
-[71] -235.5804 -235.5775 -235.5749 -235.5727 -235.5708 -235.5692 -235.5678
-[78] -235.5665 -235.5655 -235.5646</code></pre>
-<pre class="r"><code>lai.s_c = susie_cp(lai,s_init=lai.s_b,estimate_prior_variance=TRUE)
-plot_cs(lai.s_c)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>plot(lai)
-lines(predict(lai.s_b),col=2,type=&quot;s&quot;)
-plot_cs(lai.s_c)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-10-2.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>lai.s_c$elbo</code></pre>
-<pre><code> [1]      -Inf -218.6124 -218.3783 -218.1978 -218.0523 -217.9320 -217.8306
- [8] -217.7436 -217.6682 -217.6019 -217.5433 -217.4910 -217.4441 -217.4019
-[15] -217.3637 -217.3290 -217.2975 -217.2688 -217.2425 -217.2185 -217.1965
-[22] -217.1763 -217.1578 -217.1408 -217.1252 -217.1108 -217.0976 -217.0855
-[29] -217.0744 -217.0642 -217.0548 -217.0462 -217.0383 -217.0311 -217.0245
-[36] -217.0184 -217.0129 -217.0079 -217.0033 -216.9991 -216.9953 -216.9919
-[43] -216.9888 -216.9859 -216.9834 -216.9811 -216.9790 -216.9771 -216.9754
-[50] -216.9739 -216.9725 -216.9713 -216.9702 -216.9692</code></pre>
-<p>Also try trendfilter in the genlasso package:</p>
-<pre class="r"><code>library(&quot;genlasso&quot;)</code></pre>
-<pre><code>Loading required package: Matrix</code></pre>
-<pre><code>Loading required package: igraph</code></pre>
-<pre><code>
-Attaching package: &#39;igraph&#39;</code></pre>
-<pre><code>The following objects are masked from &#39;package:stats&#39;:
+<p>Here we try initializing susie from the results from <code>changepoint</code> and <code>genlasso</code>:</p>
+<pre class="r"><code>s0.cp = susie_init_coef(cpts(lai.res$fit$cp),diff(unlist(coef(lai.res$fit$cp))),length(lai$x)-1)
+lai.s.cp0 = susie_cp(lai$x,s_init=s0.cp,estimate_prior_variance=FALSE)
+lai.s.cp = susie_cp(lai$x,s_init=lai.s.cp0,estimate_prior_variance=TRUE)
 
-    decompose, spectrum</code></pre>
-<pre><code>The following object is masked from &#39;package:base&#39;:
+bhat = lai.res$fit$tf$beta[,10] #result with 10 changepoints
+dhat = diff(bhat)
+dhat = ifelse(abs(dhat)&gt;1e-8, dhat,0)
+s0.tf = susie_init_coef(which(dhat!=0),dhat[dhat!=0],length(lai$x)-1)
+lai.s.tf0 = susie_cp(lai$x,s_init=s0.tf,estimate_prior_variance=FALSE)
+lai.s.tf = susie_cp(lai$x,s_init=lai.s.tf0,estimate_prior_variance=TRUE)
 
-    union</code></pre>
-<pre class="r"><code>lai.tf = trendfilter(lai,ord=0)
-lai.tf.cv = cv.trendfilter(lai.tf)</code></pre>
-<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
-<pre class="r"><code>opt = which(lai.tf$lambda==lai.tf.cv$lambda.min) #optimal value of lambda
-lai.tf.fit= lai.tf$fit[,opt]
-plot(lai)
-lines(lai.tf.fit,type=&quot;s&quot;,col=2,lwd=2)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>bhat.tf = diff(lai.tf$beta[,opt])
-bhat.tf = ifelse(abs(bhat.tf&lt;1e-5),0,bhat.tf) # make very small values 0
-s0.tf = susie_init_coef(which(bhat.tf!=0),bhat.tf[bhat.tf!=0],length(lai)-1)
-lai.s.tf = susie_cp(lai,s_init = s0.tf,estimate_prior_variance=TRUE)
-lai.s.tf$elbo</code></pre>
-<pre><code>  [1]      -Inf -405.7173 -364.7052 -344.1847 -336.1369 -332.8231 -330.8278
-  [8] -329.1923 -327.5745 -325.1110 -321.0096 -317.6677 -314.5475 -311.6704
- [15] -309.0480 -306.6274 -304.3418 -302.1151 -299.8204 -297.0738 -294.4913
- [22] -293.2757 -292.1828 -291.1844 -290.2599 -289.4007 -288.6002 -287.8530
- [29] -287.1544 -286.5004 -285.8875 -285.3124 -284.7726 -284.2654 -283.7886
- [36] -283.3401 -282.9180 -282.5206 -282.1462 -281.7934 -281.4606 -281.1466
- [43] -280.8500 -280.5696 -280.3043 -280.0528 -279.8140 -279.5866 -279.3695
- [50] -279.1612 -278.9602 -278.7643 -278.5711 -278.3770 -278.1768 -277.9625
- [57] -277.7224 -277.4390 -277.0883 -276.6390 -276.0364 -275.1461 -273.9363
- [64] -272.7732 -272.0091 -271.6603 -271.3907 -271.1490 -270.9279 -270.7239
- [71] -270.5347 -270.3586 -270.1942 -270.0405 -269.8966 -269.7618 -269.6354
- [78] -269.5169 -269.4057 -269.3014 -269.2035 -269.1117 -269.0255 -268.9447
- [85] -268.8688 -268.7976 -268.7307 -268.6679 -268.6089 -268.5535 -268.5014
- [92] -268.4524 -268.4063 -268.3629 -268.3220 -268.2834 -268.2469 -268.2125
- [99] -268.1799 -268.1490 -268.1198</code></pre>
-<pre class="r"><code>plot(lai)
-lines(predict(lai.s.tf),col=2)
+plot(lai$x)
+lines(predict(lai.s.cp),col=2,type=&quot;s&quot;)
+lines(predict(lai.s.tf),col=3,type=&quot;s&quot;)
+get_obj(lai.s.cp)</code></pre>
+<pre><code>[1] -216.9692</code></pre>
+<pre class="r"><code>get_obj(lai.s.tf)</code></pre>
+<pre><code>[1] -220.1951</code></pre>
+<pre class="r"><code>plot_cs(lai.s.cp)
 plot_cs(lai.s.tf)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-11-2.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-8-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-8-1.png" target="_blank">07cb570</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-19
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
+</div>
+<div id="simulation-based-on-lai-et-al" class="section level2">
+<h2>Simulation based on Lai et al</h2>
+<p>These data looked interesting because they seemed to be a bit challenging for some methods. But we do not know the truth of course. So I simulated some data based on the fit.</p>
+<p>In the results here we see that trendfilter tends to include too many changepoints (not suprising); other methods produce similar results. The different behavior of bcp here vs the real data suggest to me that the real data may show non-gaussian residuals (eg that one outlier(?) point).</p>
+<pre class="r"><code>set.seed(1)
+lai.mean = rep(unlist(coef(lai.res$fit$cp)),diff(c(0,cpts(lai.res$fit$cp),length(lai$x))))
+lai.sd = sd(lai$x-lai.mean)
+lai.sim = list(x=rnorm(length(lai.mean),lai.mean,lai.sd),true_mean=lai.mean)
+
+lai.sim.res = apply_methods(lai.sim)</code></pre>
+<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
+<pre class="r"><code>plot_results(lai.sim.res,lai.sim)
+plot_cs(lai.sim.res$fit$susie)</code></pre>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-9-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-9-1.png" target="_blank">07cb570</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-19
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
+<pre class="r"><code>compute_error(lai.sim.res,lai.sim)</code></pre>
+<pre><code>      susie         bcp          l0          tf          cp 
+0.019417479 0.015219952 0.060841408 0.036559321 0.008346073 </code></pre>
+<pre class="r"><code>s0.cp = susie_init_coef(cpts(lai.sim.res$fit$cp),diff(unlist(coef(lai.sim.res$fit$cp))),length(lai.sim$x)-1)
+
+lai.sim.s.cp = susie_cp(lai.sim$x,s_init=s0.cp,estimate_prior_variance=FALSE)
+lai.sim.s.cp2 = susie_cp(lai.sim$x,s_init=lai.sim.s.cp,estimate_prior_variance=TRUE)
+
+plot_results(lai.sim.res,lai.sim)
+plot_cs(lai.sim.s.cp2)</code></pre>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-10-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-10-1.png" target="_blank">07cb570</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-19
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
+<pre class="r"><code>mean((predict(lai.sim.s.cp2)-lai.sim$true_mean)^2)</code></pre>
+<pre><code>[1] 0.008400276</code></pre>
 </div>
 <div id="example-from-the-bcp-package" class="section level2">
 <h2>Example from the BCP package</h2>
 <p>This one is described as a “hard” example (with one change point) in the bcp examples.</p>
 <pre class="r"><code>set.seed(5)
 x &lt;- rep(c(0,1), each=50)
-eg2 &lt;- x +  rnorm(50, sd=1)
-eg2.bcp &lt;- bcp(eg2)
-plot(eg2.bcp, main=&quot;Univariate Change Point Example&quot;)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-12-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>Try susie:</p>
-<pre class="r"><code>eg2.s = susie_cp(eg2)
-plot(eg2)
-lines(x,lwd=2)
-lines(predict(eg2.s),col=2,lwd=2)
-lines(eg2.bcp$posterior.mean,col=3,lwd=2)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>It is a bit wiggly, so try increasing the number of iterations (from default of 500):</p>
-<pre class="r"><code>eg2.bcp.long &lt;- bcp(eg2,mcmc = 5000,return.mcmc=TRUE)
-plot(eg2)
-lines(x,lwd=2)
-lines(predict(eg2.s),col=2,lwd=2)
-lines(eg2.bcp.long$posterior.mean,col=3,lwd=2)
-points(eg2.bcp.long$mcmc.means[1000,],col=4,lwd=2)
-points(eg2.bcp.long$mcmc.means[5000,],col=5,lwd=2)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>plot(colMeans(eg2.bcp.long$mcmc.means),col=4)
-lines(eg2.bcp$posterior.mean)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-14-2.png" width="672" style="display: block; margin: auto;" /></p>
-<p>That is suprising that the long and short run agree so closely. But</p>
-<pre class="r"><code>eg2.bcp.short &lt;- bcp(eg2,mcmc=100,return.mcmc=TRUE)
-plot(eg2.bcp.short$posterior.mean,eg2.bcp$posterior.mean)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" /></p>
+eg2 = list(x = x +  rnorm(50, sd=1), true_mean = x)
+
+eg2.res = apply_methods(eg2)</code></pre>
+<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
+<pre class="r"><code>plot_results(eg2.res,eg2)
+plot_cs(eg2.res$fit$susie)</code></pre>
+<pre><code>Warning in min(CS[[i]]): no non-missing arguments to min; returning Inf</code></pre>
+<pre><code>Warning in max(CS[[i]]): no non-missing arguments to max; returning -Inf</code></pre>
+<pre><code>Warning in min(CS[[i]]): no non-missing arguments to min; returning Inf</code></pre>
+<pre><code>Warning in max(CS[[i]]): no non-missing arguments to max; returning -Inf</code></pre>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-11-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-11-1.png" target="_blank">07cb570</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-19
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
+<pre class="r"><code>compute_error(eg2.res,eg2)</code></pre>
+<pre><code>     susie        bcp         l0         tf         cp 
+0.05442873 0.13518020 0.28787237 0.35619464 0.01434871 </code></pre>
+<p>Try susie initialized from cp:</p>
+<pre class="r"><code>s0.cp = susie_init_coef(cpts(eg2.res$fit$cp),diff(unlist(coef(eg2.res$fit$cp))),length(eg2$x)-1)
+
+eg2.s.cp = susie_cp(eg2$x,s_init=s0.cp,estimate_prior_variance=FALSE)
+eg2.s.cp2 = susie_cp(eg2$x,s_init=eg2.s.cp,estimate_prior_variance=TRUE)
+mean((predict(eg2.s.cp2)-eg2$true_mean)^2)</code></pre>
+<pre><code>[1] 0.02948344</code></pre>
 </div>
 <div id="dna-segmentation-example-from-bcp-package" class="section level2">
 <h2>DNA segmentation example from bcp package</h2>
@@ -864,7 +983,37 @@ plot(eg2.bcp.short$posterior.mean,eg2.bcp$posterior.mean)</code></pre>
 chrom11 &lt;- as.vector(na.omit(coriell$Coriell.05296[coriell$Chromosome==11]))
 chrom11.bcp &lt;- bcp(chrom11)
 plot(chrom11.bcp, main=&quot;Coriell chromosome 11 (bcp)&quot;)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-16-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-13-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-13-1.png" target="_blank">07cb570</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-19
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <p>Here it compares results with DNAcopy package (also part of the demo)</p>
 <pre class="r"><code>  library(&quot;DNAcopy&quot;)
    n &lt;- length(chrom11)
@@ -884,7 +1033,37 @@ plot(chrom11.bcp, main=&quot;Coriell chromosome 11 (bcp)&quot;)</code></pre>
    for (i in 1:(dim(cbs$output)[1]-1)) {
      abline(v=cbs$output$loc.end[i], col=&quot;red&quot;)
    }</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-17-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-14-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-14-1.png" target="_blank">07cb570</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-19
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>   par(op3)
    par(op)</code></pre>
 <p>Try susie. Note that this example illustrates a case where a variable (here 66) occurs in multiple CSs… something we don’t yet fully understand the implications of I think.</p>
@@ -922,14 +1101,74 @@ $coverage
 [1] 0.95</code></pre>
 <pre class="r"><code>  abline(v=66)
   abline(v=51)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-18-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-15-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-15-1.png" target="_blank">07cb570</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-19
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <p>An example from the DNAcopy <code>segment</code> function:</p>
 <pre class="r"><code>set.seed(51)
 true_mean = rep(c(-0.2,0.1,1,-0.5,0.2,-0.5,0.1,-0.2),c(137,87,17,49,29,52,87,42))
 genomdat &lt;- rnorm(500, sd=0.2) + true_mean
 
 plot(genomdat)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-19-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-16-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-16-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-16-1.png" target="_blank">07cb570</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-19
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>chrom &lt;- rep(1:2,c(290,210))
 maploc &lt;- c(1:290,1:210)
 
@@ -941,14 +1180,44 @@ genomdat.s = susie_cp(genomdat)
 
 plot_cs(genomdat.s)    
 lines(true_mean,col=1,type=&quot;s&quot;)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-19-2.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-16-2.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(genomdat.s$pip)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-19-3.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-16-3.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>genomdat.bcp = bcp(genomdat)
 plot(genomdat.bcp)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-20-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-17-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-17-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-17-1.png" target="_blank">07cb570</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-19
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>plot(genomdat.bcp$posterior.mean,predict(genomdat.s))</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-20-2.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-17-2.png" width="672" style="display: block; margin: auto;" /></p>
 <p>This example from DNAcopy too. (commented out for now as takes too long.)</p>
 <pre class="r"><code># data(coriell)
 # 
@@ -979,18 +1248,27 @@ attached base packages:
 [8] base     
 
 other attached packages:
-[1] DNAcopy_1.55.0    genlasso_1.4      igraph_1.2.2      Matrix_1.2-14    
-[5] bcp_4.0.3         susieR_0.5.0.0347 changepoint_2.2.2 zoo_1.8-4        
+ [1] DNAcopy_1.55.0    ggplot2_3.0.0     changepoint_2.2.2
+ [4] zoo_1.8-4         bcp_4.0.3         L0Learn_1.0.7    
+ [7] genlasso_1.4      igraph_1.2.2      Matrix_1.2-14    
+[10] susieR_0.5.0.0347
 
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.19       knitr_1.20         whisker_0.3-2     
- [4] magrittr_1.5       workflowr_1.1.1    lattice_0.20-35   
- [7] stringr_1.3.1      tools_3.5.1        R.oo_1.22.0       
-[10] git2r_0.23.0       htmltools_0.3.6    matrixStats_0.54.0
-[13] yaml_2.2.0         rprojroot_1.3-2    digest_0.6.18     
-[16] R.utils_2.7.0      evaluate_0.12      rmarkdown_1.10    
-[19] stringi_1.2.4      compiler_3.5.1     backports_1.1.2   
-[22] R.methodsS3_1.7.1  pkgconfig_2.0.2   </code></pre>
+ [1] Rcpp_0.12.19       bindr_0.1.1        compiler_3.5.1    
+ [4] pillar_1.3.0       git2r_0.23.0       plyr_1.8.4        
+ [7] workflowr_1.1.1    R.methodsS3_1.7.1  R.utils_2.7.0     
+[10] tools_3.5.1        digest_0.6.18      evaluate_0.12     
+[13] tibble_1.4.2       gtable_0.2.0       lattice_0.20-35   
+[16] pkgconfig_2.0.2    rlang_0.2.2        yaml_2.2.0        
+[19] bindrcpp_0.2.2     withr_2.1.2        stringr_1.3.1     
+[22] dplyr_0.7.7        knitr_1.20         tidyselect_0.2.5  
+[25] rprojroot_1.3-2    glue_1.3.0         R6_2.3.0          
+[28] rmarkdown_1.10     reshape2_1.4.3     purrr_0.2.5       
+[31] magrittr_1.5       whisker_0.3-2      matrixStats_0.54.0
+[34] backports_1.1.2    scales_1.0.0       htmltools_0.3.6   
+[37] assertthat_0.2.0   colorspace_1.3-2   stringi_1.2.4     
+[40] lazyeval_0.2.1     munsell_0.5.0      crayon_1.3.4      
+[43] R.oo_1.22.0       </code></pre>
 </div>
 
 <!-- Adjust MathJax settings so that all math formulae are shown using
