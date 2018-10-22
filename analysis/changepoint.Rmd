@@ -10,11 +10,19 @@ output: workflowr::wflow_html
 Here we try susie on some example change point problems,
 and compare with other methods for change point detection
 in the `changepoint` package (penalized methods), `bcp` package
-(Bayesian MCMC method), and `genlasso` (L1 penalty method).
+(Bayesian MCMC method), `genlasso` (L1 penalty method), and `L0learn` (L0 penalty).
 
-First we define some useful functions to run susie on changepoint problems
+First we define some useful functions to run susie and other methods on changepoint problems
 and plot the CSs.
 ```{r}
+library("susieR")
+library("genlasso")
+library("L0Learn")
+library("bcp")
+library("changepoint")
+library("ggplot2")
+
+
 susie_cp = function(y,auto=FALSE,...){
   n=length(y)
   X = matrix(0,nrow=n,ncol=n-1)
@@ -35,7 +43,7 @@ susie_cp = function(y,auto=FALSE,...){
 # does - 0.5 so that singletons show up
 # this is a ggplot version
 susie_plot_cp = function(s,y){
-  library("ggplot2")
+
   df<-data.frame(x = 1:length(y),y = y)
   CS = s$sets$cs
 
@@ -52,8 +60,47 @@ susie_plot_cp = function(s,y){
 plot_cs = function(s){
   CS = s$sets$cs
   for(i in 1:length(CS)){
-    rect(min(CS[[i]])-0.5,-5,max(CS[[i]])+0.5,5,col = rgb(1,0,0,alpha=0.5),border=NA)
+    rect(min(CS[[i]]),-5,max(CS[[i]])+1,5,col = rgb(1,0,0,alpha=0.5),border=NA)
   }
+}
+
+#ggplot function for changepoint results
+plot_cp = function(df){
+  #unwritten!
+}
+
+get_obj = function(s){
+  return(s$elbo[length(s$elbo)])
+}
+```
+
+This is a wrapper for L0learn
+```{r}
+# wrapper to apply L0Learn to changepoint analysis
+#coordinate ascent may not work so well so I use the slower/better algorithm, CDPSI
+l0_cp = function(y,algorithm="CDPSI",maxSuppSize=20,...){ 
+  n=length(y)
+  X = matrix(0,nrow=n,ncol=n-1)
+  for(j in 1:(n-1)){
+    for(i in (j+1):n){
+      X[i,j] = 1
+    }
+  }
+  y.l0.cv = L0Learn.cvfit(X,y,nFolds=5,seed=1,penalty="L0",maxSuppSize = maxSuppSize,algorithm=algorithm,...) 
+  opt = which.min(y.l0.cv$cvMeans[[1]])
+  yhat = predict(y.l0.cv, newx = X,lambda=y.l0.cv$fit$lambda[[1]][opt])
+  return(list(fit = y.l0.cv$fit,yhat=yhat))
+}
+```
+
+Here is a wrapper for trendfiltering:
+```{r}
+tf_cp = function(x){
+  x.tf = trendfilter(x,ord=0)
+  x.tf.cv = cv.trendfilter(x.tf)
+  opt = which(x.tf$lambda==x.tf.cv$lambda.min) #optimal value of lambda
+  yhat= x.tf$fit[,opt]
+  return(list(fit=x.tf,yhat =yhat))
 }
 ```
 
@@ -61,128 +108,148 @@ plot_cs = function(s){
 
 This example comes from [Killick and Eckley](http://www.lancs.ac.uk/~killick/Pub/KillickEckley2011.pdf)
 ```{r}
-library(changepoint)
 set.seed(10)
-eg1=c(rnorm(100,0,1),rnorm(100,1,1),rnorm(100,0,1),rnorm(100,0.2,1)) 
-ts.plot(eg1,xlab="Index")
-true_mean = c(rep(0,100),rep(1,100),rep(0,100),rep(0.2,100))
+eg1=list()
+eg1$x=c(rnorm(100,0,1),rnorm(100,1,1),rnorm(100,0,1),rnorm(100,0.2,1)) 
+eg1$true_mean = c(rep(0,100),rep(1,100),rep(0,100),rep(0.2,100))
 ```
 
-Here we apply susie to this example. It finds 2 (out of the three) changepoints.
 ```{r}
-library("susieR")
-eg1.s = susie_cp(eg1)
-ts.plot(eg1,xlab="Index")
-lines(predict(eg1.s),col=2,lwd=2)
-plot_cs(eg1.s)
+apply_methods = function(data){
+  # Susie
+  fit.s = susie_cp(data$x)
+  yhat.s = predict(fit.s)
+  
+  # bcp
+  fit.bcp = bcp(data$x)
+  yhat.bcp = fit.bcp$posterior.mean
+  
+  # L0Learn
+  res.l0= l0_cp(data$x)
+  fit.l0 = res.l0$fit
+  yhat.l0 = res.l0$yhat
+  
+  # trendfilter
+  res.tf = tf_cp(data$x)
+  fit.tf = res.tf$fit
+  yhat.tf = res.tf$yhat
+  
+  # changepoint
+  fit.cp = cpt.mean(data$x,method="PELT")
+  d = diff(c(0,cpts(fit.cp),length(data$x))) 
+  yhat.cp = rep(coef(fit.cp)$mean,d)
+  
+  
+  return(list(fit = list(susie=fit.s,bcp=fit.bcp,l0=fit.l0,tf=fit.tf, cp = fit.cp), yhat = list(susie=yhat.s,bcp = yhat.bcp,l0=yhat.l0,tf=yhat.tf,cp = yhat.cp)))
+}
+
+plot_results = function(res,data){
+  plot(data$x,col="gray")
+  lines(data$true_mean)
+  for(i in 1:length(res$yhat)){
+    lines(res$yhat[[i]],col=(i+1),type="s")
+  }
+}
+
+compute_error = function(res,data){
+  mse=rep(0,length(res$yhat))
+  for(i in 1:length(res$yhat)){
+    mse[i] = mean((res$yhat[[i]]-data$true_mean)^2)
+  }
+  names(mse) <- names(res$yhat)
+  mse
+}
+
+eg1.res = apply_methods(eg1)
+plot_results(eg1.res,eg1)
+plot_cs(eg1.res$fit$susie)
+compute_error(eg1.res,eg1)
 ```
 
-
-Try the bcp package
+Compare PIPs of bcp and susie:
 ```{r}
-library(bcp)
-eg1.bcp<- bcp(eg1)
-plot(eg1.bcp, main = "Univariate Change Point Example")
-legacyplot(eg1.bcp)
-plot(eg1.bcp$posterior.prob[-1], susie_get_PIP(eg1.s))
-plot(eg1.bcp$posterior.mean, predict(eg1.s))
-plot(eg1.bcp$posterior.prob[-1])
-points(susie_get_PIP(eg1.s), col = 2)
-plot(eg1)
-lines(true_mean, col = 2, lwd = 2)
-lines(predict(eg1.s), col = 3, lwd = 2)
-lines(eg1.bcp$posterior.mean, col = 4, lwd = 2)
-mean((eg1.bcp$posterior.mean - true_mean) ^ 2)
-mean((predict(eg1.s) - true_mean) ^ 2)
-
+plot(eg1.res$fit$bcp$posterior.prob[-1], susie_get_PIP(eg1.res$fit$susie))
+plot(eg1.res$fit$bcp$posterior.prob[-1],col=3)
+points(susie_get_PIP(eg1.res$fit$susie),col=2)
 ```
+
+
 
 
 ## Lai 2005 data
 
-This is a real-data example from the changepoint package.
+This is a real-data example from the changepoint package. Of course we do not
+know the truth here so cannot compute errors. But it is an interesting example because
+susie (run from default 0 initialization) misses a changepoint.
 
 ```{r}
 data(Lai2005fig4)
-lai = Lai2005fig4[,5]
-lai.default=cpt.mean(lai,method="PELT")
-lai.s = susie_cp(lai)
-lai.bcp = bcp(lai)
-lai.bcp.long = bcp(lai,mcmc=5000)
-```
+lai = list(x=Lai2005fig4[,5],true_mean = rep(NA,length(Lai2005fig4[,5])))
 
-Results from changepoint:
-```{r}
-plot(lai.default,pch=20,col="grey",cpt.col="black",type="p",xlab="Index") 
-cpts(lai.default)
-coef(lai.default)
-```
-
-From susie (which seems to "miss" one of the changepoints):
-```{r}
-plot(lai)
-lines(predict(lai.s),col=2)
-lai.s$elbo
-```
-
-From bcp:
-```{r}
-plot(lai)
-lines(lai.bcp$posterior.mean, col = 3, lwd = 2)
-lines(lai.bcp.long$posterior.mean, col = 4, lwd = 2)
-plot(lai.bcp.long$posterior.prob)
-which(lai.bcp.long$posterior.prob>0.99)
+lai.res=apply_methods(lai)
+plot_results(lai.res,lai)
+plot_cs(lai.res$fit$susie)
 ```
 
 
-See if this is maybe a convergence issue solved by `susie_auto`:
+Here we try initializing susie from the results from `changepoint` and `genlasso`:
 ```{r}
-lai.s.auto = susie_cp(lai,auto=TRUE)
-plot(lai)
-lines(predict(lai.s.auto),col=2)
-plot_cs(lai.s.auto)
-lai.s.auto$elbo
-```
+s0.cp = susie_init_coef(cpts(lai.res$fit$cp),diff(unlist(coef(lai.res$fit$cp))),length(lai$x)-1)
+lai.s.cp0 = susie_cp(lai$x,s_init=s0.cp,estimate_prior_variance=FALSE)
+lai.s.cp = susie_cp(lai$x,s_init=lai.s.cp0,estimate_prior_variance=TRUE)
 
-I wonder if this is an example where the auto version is also
-finding a local optimum (with many changepoints), and that
-the best solution would have fewer?
-Maybe investigate further later.
+bhat = lai.res$fit$tf$beta[,10] #result with 10 changepoints
+dhat = diff(bhat)
+dhat = ifelse(abs(dhat)>1e-8, dhat,0)
+s0.tf = susie_init_coef(which(dhat!=0),dhat[dhat!=0],length(lai$x)-1)
+lai.s.tf0 = susie_cp(lai$x,s_init=s0.tf,estimate_prior_variance=FALSE)
+lai.s.tf = susie_cp(lai$x,s_init=lai.s.tf0,estimate_prior_variance=TRUE)
 
-```{r}
-s0 = susie_init_coef(cpts(lai.default),diff(unlist(coef(lai.default))),length(lai)-1)
-lai.s_b = susie_cp(lai,s_init=s0)
-plot(lai)
-lines(predict(lai.s_b),col=2)
-plot_cs(lai.s_b)
-lai.s_b$elbo
+plot(lai$x)
+lines(predict(lai.s.cp),col=2,type="s")
+lines(predict(lai.s.tf),col=3,type="s")
+get_obj(lai.s.cp)
+get_obj(lai.s.tf)
 
-lai.s_c = susie_cp(lai,s_init=lai.s_b,estimate_prior_variance=TRUE)
-plot_cs(lai.s_c)
-plot(lai)
-lines(predict(lai.s_b),col=2,type="s")
-plot_cs(lai.s_c)
-lai.s_c$elbo
-```
-
-Also try trendfilter in the genlasso package:
-```{r}
-library("genlasso")
-lai.tf = trendfilter(lai,ord=0)
-lai.tf.cv = cv.trendfilter(lai.tf)
-opt = which(lai.tf$lambda==lai.tf.cv$lambda.min) #optimal value of lambda
-lai.tf.fit= lai.tf$fit[,opt]
-plot(lai)
-lines(lai.tf.fit,type="s",col=2,lwd=2)
-
-bhat.tf = diff(lai.tf$beta[,opt])
-bhat.tf = ifelse(abs(bhat.tf<1e-5),0,bhat.tf) # make very small values 0
-s0.tf = susie_init_coef(which(bhat.tf!=0),bhat.tf[bhat.tf!=0],length(lai)-1)
-lai.s.tf = susie_cp(lai,s_init = s0.tf,estimate_prior_variance=TRUE)
-lai.s.tf$elbo
-plot(lai)
-lines(predict(lai.s.tf),col=2)
+plot_cs(lai.s.cp)
 plot_cs(lai.s.tf)
+```
+
+
+## Simulation based on Lai et al
+
+These data looked interesting because they seemed
+to be a bit challenging for some methods. But we do not
+know the truth of course. So I simulated some data based
+on the fit.
+
+In the results here we see that trendfilter tends to include too many 
+changepoints (not suprising); other methods produce similar results.
+The different behavior of bcp here vs the real data suggest to me
+that the real data may show non-gaussian residuals (eg that one outlier(?) point).
+```{r}
+set.seed(1)
+lai.mean = rep(unlist(coef(lai.res$fit$cp)),diff(c(0,cpts(lai.res$fit$cp),length(lai$x))))
+lai.sd = sd(lai$x-lai.mean)
+lai.sim = list(x=rnorm(length(lai.mean),lai.mean,lai.sd),true_mean=lai.mean)
+
+lai.sim.res = apply_methods(lai.sim)
+plot_results(lai.sim.res,lai.sim)
+plot_cs(lai.sim.res$fit$susie)
+compute_error(lai.sim.res,lai.sim)
+
+```
+
+
+```{r}
+s0.cp = susie_init_coef(cpts(lai.sim.res$fit$cp),diff(unlist(coef(lai.sim.res$fit$cp))),length(lai.sim$x)-1)
+
+lai.sim.s.cp = susie_cp(lai.sim$x,s_init=s0.cp,estimate_prior_variance=FALSE)
+lai.sim.s.cp2 = susie_cp(lai.sim$x,s_init=lai.sim.s.cp,estimate_prior_variance=TRUE)
+
+plot_results(lai.sim.res,lai.sim)
+plot_cs(lai.sim.s.cp2)
+mean((predict(lai.sim.s.cp2)-lai.sim$true_mean)^2)
 ```
 
 
@@ -192,39 +259,23 @@ This one is described as a "hard" example (with one change point) in the bcp exa
 ```{r}
 set.seed(5)
 x <- rep(c(0,1), each=50)
-eg2 <- x +  rnorm(50, sd=1)
-eg2.bcp <- bcp(eg2)
-plot(eg2.bcp, main="Univariate Change Point Example")
+eg2 = list(x = x +  rnorm(50, sd=1), true_mean = x)
+
+eg2.res = apply_methods(eg2)
+plot_results(eg2.res,eg2)
+plot_cs(eg2.res$fit$susie)
+compute_error(eg2.res,eg2)
 ```
 
-Try susie:
+
+Try susie initialized from cp:
 ```{r}
-eg2.s = susie_cp(eg2)
-plot(eg2)
-lines(x,lwd=2)
-lines(predict(eg2.s),col=2,lwd=2)
-lines(eg2.bcp$posterior.mean,col=3,lwd=2)
-```
+s0.cp = susie_init_coef(cpts(eg2.res$fit$cp),diff(unlist(coef(eg2.res$fit$cp))),length(eg2$x)-1)
 
-It is a bit wiggly, so try increasing the number of iterations (from default of 500):
-```{r}
-eg2.bcp.long <- bcp(eg2,mcmc = 5000,return.mcmc=TRUE)
-plot(eg2)
-lines(x,lwd=2)
-lines(predict(eg2.s),col=2,lwd=2)
-lines(eg2.bcp.long$posterior.mean,col=3,lwd=2)
-points(eg2.bcp.long$mcmc.means[1000,],col=4,lwd=2)
-points(eg2.bcp.long$mcmc.means[5000,],col=5,lwd=2)
-plot(colMeans(eg2.bcp.long$mcmc.means),col=4)
-lines(eg2.bcp$posterior.mean)
+eg2.s.cp = susie_cp(eg2$x,s_init=s0.cp,estimate_prior_variance=FALSE)
+eg2.s.cp2 = susie_cp(eg2$x,s_init=eg2.s.cp,estimate_prior_variance=TRUE)
+mean((predict(eg2.s.cp2)-eg2$true_mean)^2)
 ```
-
-That is suprising that the long and short run agree so closely. But 
-```{r}
-eg2.bcp.short <- bcp(eg2,mcmc=100,return.mcmc=TRUE)
-plot(eg2.bcp.short$posterior.mean,eg2.bcp$posterior.mean)
-```
-
 
 
 ## DNA segmentation example from bcp package
