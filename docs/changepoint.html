@@ -347,7 +347,7 @@ div.section {
 </details>
 </li>
 <li>
-<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/stephens999/susier-investigate/tree/d6932aa2c42c6080a1144d4f78821854eefb4eb3" target="_blank">d6932aa</a> </summary></p>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/stephens999/susier-investigate/tree/9126e0e3d1979fc9df6d63805eecf13c5d83751b" target="_blank">9126e0e</a> </summary></p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 <pre><code>
 Ignored files:
@@ -393,6 +393,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/9126e0e3d1979fc9df6d63805eecf13c5d83751b/analysis/changepoint.Rmd" target="_blank">9126e0e</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-22
+</td>
+<td style="text-align:left;">
+workflowr::wflow_publish(“analysis/changepoint.Rmd”)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+html
+</td>
+<td style="text-align:left;">
+<a href="https://cdn.rawgit.com/stephens999/susier-investigate/ef836ffe860594c2717af1f2097a0edb2caaddd9/docs/changepoint.html" target="_blank">ef836ff</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-22
+</td>
+<td style="text-align:left;">
+Build site.
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 Rmd
@@ -512,6 +546,7 @@ Attaching package: &#39;zoo&#39;</code></pre>
 <pre><code>Successfully loaded changepoint package version 2.2.2
  NOTE: Predefined penalty values changed in version 2.2.  Previous penalty values with a postfix 1 i.e. SIC1 are now without i.e. SIC and previous penalties without a postfix i.e. SIC are now with a postfix 0 i.e. SIC0. See NEWS and help files for further details.</code></pre>
 <pre class="r"><code>library(&quot;ggplot2&quot;)
+library(&quot;DNAcopy&quot;)
 
 
 susie_cp = function(y,auto=FALSE,...){
@@ -587,6 +622,12 @@ l0_cp = function(y,algorithm=&quot;CDPSI&quot;,maxSuppSize=20,...){
   yhat= x.tf$fit[,opt]
   return(list(fit=x.tf,yhat =yhat))
 }</code></pre>
+<p>Here is a wrapper for <code>segment</code> from DNAcopy:</p>
+<pre class="r"><code>segment_cp = function(x){
+  res = segment(CNA(x,rep(1,length(x)),1:length(x)))
+  yhat = rep(res$output$seg.mean,diff(c(0,res$output$loc.end)))
+  return(list(fit=res,yhat=yhat))
+}</code></pre>
 </div>
 <div id="simple-simulated-example" class="section level2">
 <h2>Simple simulated example</h2>
@@ -619,15 +660,19 @@ eg1$true_mean = c(rep(0,100),rep(1,100),rep(0,100),rep(0.2,100))</code></pre>
   d = diff(c(0,cpts(fit.cp),length(data$x))) 
   yhat.cp = rep(coef(fit.cp)$mean,d)
   
+  #segment
+  res.segment = segment_cp(data$x)
+  fit.segment = res.segment$fit
+  yhat.segment = res.segment$yhat
   
-  return(list(fit = list(susie=fit.s,bcp=fit.bcp,l0=fit.l0,tf=fit.tf, cp = fit.cp), yhat = list(susie=yhat.s,bcp = yhat.bcp,l0=yhat.l0,tf=yhat.tf,cp = yhat.cp)))
+  return(list(fit = list(susie=fit.s,bcp=fit.bcp,l0=fit.l0,tf=fit.tf, cp = fit.cp, segment = fit.segment), yhat = list(susie=yhat.s,bcp = yhat.bcp,l0=yhat.l0,tf=yhat.tf,cp = yhat.cp, segment = yhat.segment)))
 }
 
 plot_results = function(res,data){
   plot(data$x,col=&quot;gray&quot;)
   lines(data$true_mean)
   for(i in 1:length(res$yhat)){
-    lines(res$yhat[[i]],col=(i+1),type=&quot;s&quot;)
+    lines(res$yhat[[i]],col=(i+1),type=&quot;s&quot;,lwd=2)
   }
 }
 
@@ -641,45 +686,10 @@ compute_error = function(res,data){
 }
 
 eg1.res = apply_methods(eg1)</code></pre>
-<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
+<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... 
+Analyzing: Sample.1 </code></pre>
 <pre class="r"><code>plot_results(eg1.res,eg1)
 plot_cs(eg1.res$fit$susie)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of unnamed-chunk-5-1.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-<a href="https://github.com/stephens999/susier-investigate/blob/a45f3cde47160dd9ac379b6529871827faf2301e/docs/figure/changepoint.Rmd/unnamed-chunk-5-1.png" target="_blank">a45f3cd</a>
-</td>
-<td style="text-align:left;">
-stephens999
-</td>
-<td style="text-align:left;">
-2018-10-18
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>compute_error(eg1.res,eg1)</code></pre>
-<pre><code>     susie        bcp         l0         tf         cp 
-0.03081035 0.03669960 0.22505358 0.04564223 0.03673359 </code></pre>
-<p>Compare PIPs of bcp and susie:</p>
-<pre class="r"><code>plot(eg1.res$fit$bcp$posterior.prob[-1], susie_get_PIP(eg1.res$fit$susie))</code></pre>
 <p><img src="figure/changepoint.Rmd/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of unnamed-chunk-6-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -697,6 +707,17 @@ Date
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/ef836ffe860594c2717af1f2097a0edb2caaddd9/docs/figure/changepoint.Rmd/unnamed-chunk-6-1.png" target="_blank">ef836ff</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-22
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 <a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-6-1.png" target="_blank">07cb570</a>
@@ -722,20 +743,11 @@ stephens999
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>plot(eg1.res$fit$bcp$posterior.prob[-1],col=3)
-points(susie_get_PIP(eg1.res$fit$susie),col=2)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-6-2.png" width="672" style="display: block; margin: auto;" /></p>
-</div>
-<div id="lai-2005-data" class="section level2">
-<h2>Lai 2005 data</h2>
-<p>This is a real-data example from the changepoint package. Of course we do not know the truth here so cannot compute errors. But it is an interesting example because susie (run from default 0 initialization) misses a changepoint.</p>
-<pre class="r"><code>data(Lai2005fig4)
-lai = list(x=Lai2005fig4[,5],true_mean = rep(NA,length(Lai2005fig4[,5])))
-
-lai.res=apply_methods(lai)</code></pre>
-<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
-<pre class="r"><code>plot_results(lai.res,lai)
-plot_cs(lai.res$fit$susie)</code></pre>
+<pre class="r"><code>compute_error(eg1.res,eg1)</code></pre>
+<pre><code>     susie        bcp         l0         tf         cp    segment 
+0.03081035 0.03669960 0.22505358 0.04564223 0.03673359 0.03093324 </code></pre>
+<p>Compare PIPs of bcp and susie:</p>
+<pre class="r"><code>plot(eg1.res$fit$bcp$posterior.prob[-1], susie_get_PIP(eg1.res$fit$susie))</code></pre>
 <p><img src="figure/changepoint.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of unnamed-chunk-7-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -753,6 +765,17 @@ Date
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/ef836ffe860594c2717af1f2097a0edb2caaddd9/docs/figure/changepoint.Rmd/unnamed-chunk-7-1.png" target="_blank">ef836ff</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-22
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 <a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-7-1.png" target="_blank">07cb570</a>
@@ -773,6 +796,63 @@ stephens999
 </td>
 <td style="text-align:left;">
 2018-10-18
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
+<pre class="r"><code>plot(eg1.res$fit$bcp$posterior.prob[-1],col=3)
+points(susie_get_PIP(eg1.res$fit$susie),col=2)</code></pre>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-7-2.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="lai-2005-data" class="section level2">
+<h2>Lai 2005 data</h2>
+<p>This is a real-data example from the changepoint package. Of course we do not know the truth here so cannot compute errors. But it is an interesting example because susie (run from default 0 initialization) misses a changepoint.</p>
+<pre class="r"><code>data(Lai2005fig4)
+lai = list(x=Lai2005fig4[,5],true_mean = rep(NA,length(Lai2005fig4[,5])))
+
+lai.res=apply_methods(lai)</code></pre>
+<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... 
+Analyzing: Sample.1 </code></pre>
+<pre class="r"><code>plot_results(lai.res,lai)
+plot_cs(lai.res$fit$susie)</code></pre>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-8-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/ef836ffe860594c2717af1f2097a0edb2caaddd9/docs/figure/changepoint.Rmd/unnamed-chunk-8-1.png" target="_blank">ef836ff</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-22
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-8-1.png" target="_blank">07cb570</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-19
 </td>
 </tr>
 </tbody>
@@ -799,8 +879,8 @@ get_obj(lai.s.cp)</code></pre>
 <pre><code>[1] -220.1951</code></pre>
 <pre class="r"><code>plot_cs(lai.s.cp)
 plot_cs(lai.s.tf)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of unnamed-chunk-8-1.png:</em></summary>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-9-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
 <thead>
 <tr>
@@ -818,7 +898,18 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
-<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-8-1.png" target="_blank">07cb570</a>
+<a href="https://github.com/stephens999/susier-investigate/blob/ef836ffe860594c2717af1f2097a0edb2caaddd9/docs/figure/changepoint.Rmd/unnamed-chunk-9-1.png" target="_blank">ef836ff</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-22
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-9-1.png" target="_blank">07cb570</a>
 </td>
 <td style="text-align:left;">
 stephens999
@@ -841,50 +932,10 @@ lai.sd = sd(lai$x-lai.mean)
 lai.sim = list(x=rnorm(length(lai.mean),lai.mean,lai.sd),true_mean=lai.mean)
 
 lai.sim.res = apply_methods(lai.sim)</code></pre>
-<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
+<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... 
+Analyzing: Sample.1 </code></pre>
 <pre class="r"><code>plot_results(lai.sim.res,lai.sim)
 plot_cs(lai.sim.res$fit$susie)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of unnamed-chunk-9-1.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-9-1.png" target="_blank">07cb570</a>
-</td>
-<td style="text-align:left;">
-stephens999
-</td>
-<td style="text-align:left;">
-2018-10-19
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>compute_error(lai.sim.res,lai.sim)</code></pre>
-<pre><code>      susie         bcp          l0          tf          cp 
-0.019417479 0.015219952 0.060841408 0.036559321 0.008346073 </code></pre>
-<pre class="r"><code>s0.cp = susie_init_coef(cpts(lai.sim.res$fit$cp),diff(unlist(coef(lai.sim.res$fit$cp))),length(lai.sim$x)-1)
-
-lai.sim.s.cp = susie_cp(lai.sim$x,s_init=s0.cp,estimate_prior_variance=FALSE)
-lai.sim.s.cp2 = susie_cp(lai.sim$x,s_init=lai.sim.s.cp,estimate_prior_variance=TRUE)
-
-plot_results(lai.sim.res,lai.sim)
-plot_cs(lai.sim.s.cp2)</code></pre>
 <p><img src="figure/changepoint.Rmd/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of unnamed-chunk-10-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -904,7 +955,70 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/ef836ffe860594c2717af1f2097a0edb2caaddd9/docs/figure/changepoint.Rmd/unnamed-chunk-10-1.png" target="_blank">ef836ff</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-22
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 <a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-10-1.png" target="_blank">07cb570</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-19
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
+<pre class="r"><code>compute_error(lai.sim.res,lai.sim)</code></pre>
+<pre><code>      susie         bcp          l0          tf          cp     segment 
+0.019417479 0.015219952 0.060841408 0.036559321 0.008346073 0.270791108 </code></pre>
+<pre class="r"><code>s0.cp = susie_init_coef(cpts(lai.sim.res$fit$cp),diff(unlist(coef(lai.sim.res$fit$cp))),length(lai.sim$x)-1)
+
+lai.sim.s.cp = susie_cp(lai.sim$x,s_init=s0.cp,estimate_prior_variance=FALSE)
+lai.sim.s.cp2 = susie_cp(lai.sim$x,s_init=lai.sim.s.cp,estimate_prior_variance=TRUE)
+
+plot_results(lai.sim.res,lai.sim)
+plot_cs(lai.sim.s.cp2)</code></pre>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-11-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/ef836ffe860594c2717af1f2097a0edb2caaddd9/docs/figure/changepoint.Rmd/unnamed-chunk-11-1.png" target="_blank">ef836ff</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-22
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-11-1.png" target="_blank">07cb570</a>
 </td>
 <td style="text-align:left;">
 stephens999
@@ -927,15 +1041,16 @@ x &lt;- rep(c(0,1), each=50)
 eg2 = list(x = x +  rnorm(50, sd=1), true_mean = x)
 
 eg2.res = apply_methods(eg2)</code></pre>
-<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
+<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... 
+Analyzing: Sample.1 </code></pre>
 <pre class="r"><code>plot_results(eg2.res,eg2)
 plot_cs(eg2.res$fit$susie)</code></pre>
 <pre><code>Warning in min(CS[[i]]): no non-missing arguments to min; returning Inf</code></pre>
 <pre><code>Warning in max(CS[[i]]): no non-missing arguments to max; returning -Inf</code></pre>
 <pre><code>Warning in min(CS[[i]]): no non-missing arguments to min; returning Inf</code></pre>
 <pre><code>Warning in max(CS[[i]]): no non-missing arguments to max; returning -Inf</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of unnamed-chunk-11-1.png:</em></summary>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-12-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-12-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
 <thead>
 <tr>
@@ -953,7 +1068,7 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
-<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-11-1.png" target="_blank">07cb570</a>
+<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-12-1.png" target="_blank">07cb570</a>
 </td>
 <td style="text-align:left;">
 stephens999
@@ -966,73 +1081,39 @@ stephens999
 </table>
 <p></details></p>
 <pre class="r"><code>compute_error(eg2.res,eg2)</code></pre>
-<pre><code>     susie        bcp         l0         tf         cp 
-0.05442873 0.13518020 0.28787237 0.35619464 0.01434871 </code></pre>
-<p>Try susie initialized from cp:</p>
-<pre class="r"><code>s0.cp = susie_init_coef(cpts(eg2.res$fit$cp),diff(unlist(coef(eg2.res$fit$cp))),length(eg2$x)-1)
+<pre><code>     susie        bcp         l0         tf         cp    segment 
+0.05442873 0.13518020 0.28787237 0.35619464 0.01434871 0.26689895 </code></pre>
+<p>Try estimating prior variance of susie initialized from previous results; also try initializing from results of <code>changepoint</code>.</p>
+<pre class="r"><code># estimate prior variance
+eg2.s2 = susie_cp(eg2$x,s_init=eg2.res$fit$susie,estimate_prior_variance=TRUE)
+
+# intialize from changepoint result
+s0.cp = susie_init_coef(cpts(eg2.res$fit$cp),diff(unlist(coef(eg2.res$fit$cp))),length(eg2$x)-1)
 
 eg2.s.cp = susie_cp(eg2$x,s_init=s0.cp,estimate_prior_variance=FALSE)
 eg2.s.cp2 = susie_cp(eg2$x,s_init=eg2.s.cp,estimate_prior_variance=TRUE)
-mean((predict(eg2.s.cp2)-eg2$true_mean)^2)</code></pre>
+
+
+get_obj(eg2.s.cp2)</code></pre>
+<pre><code>[1] -152.0881</code></pre>
+<pre class="r"><code>get_obj(eg2.s2)</code></pre>
+<pre><code>[1] -152.0881</code></pre>
+<pre class="r"><code>mean((predict(eg2.s.cp2)-eg2$true_mean)^2)</code></pre>
 <pre><code>[1] 0.02948344</code></pre>
+<pre class="r"><code>mean((predict(eg2.s2)-eg2$true_mean)^2)</code></pre>
+<pre><code>[1] 0.0294871</code></pre>
 </div>
 <div id="dna-segmentation-example-from-bcp-package" class="section level2">
 <h2>DNA segmentation example from bcp package</h2>
 <p>This example comes from <code>demo(coriell)</code> in the bcp package.</p>
 <pre class="r"><code>data(coriell)
-chrom11 &lt;- as.vector(na.omit(coriell$Coriell.05296[coriell$Chromosome==11]))
-chrom11.bcp &lt;- bcp(chrom11)
-plot(chrom11.bcp, main=&quot;Coriell chromosome 11 (bcp)&quot;)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of unnamed-chunk-13-1.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-13-1.png" target="_blank">07cb570</a>
-</td>
-<td style="text-align:left;">
-stephens999
-</td>
-<td style="text-align:left;">
-2018-10-19
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<p>Here it compares results with DNAcopy package (also part of the demo)</p>
-<pre class="r"><code>  library(&quot;DNAcopy&quot;)
-   n &lt;- length(chrom11)
-   cbs &lt;- segment(CNA(chrom11, rep(1, n), 1:n), verbose = 0)
-   cbs.ests &lt;- rep(unlist(cbs$output[6]), unlist(cbs$output[5]))
-   op &lt;- par(mfrow=c(2,1),col.lab=&quot;black&quot;,col.main=&quot;black&quot;)
-   op2 &lt;- par(mar=c(0,4,4,2),xaxt=&quot;n&quot;, cex.axis=0.75)
-   plot(1:n, chrom11.bcp$data[,2], col=&quot;grey&quot;, pch=20, xlab=&quot;Location&quot;,
-        ylab=&quot;Posterior Mean&quot;,
-        main=&quot;Coriell chromosome 11 (DNAcopy)&quot;)
-   lines(cbs.ests, col=&quot;red&quot;)
-   lines(chrom11.bcp$posterior.mean, lwd=2)
-   par(op2)
-   op3 &lt;- par(mar=c(5,4,0,2), xaxt=&quot;s&quot;, cex.axis=0.75)
-   plot(1:n, chrom11.bcp$posterior.prob, type=&quot;l&quot;, ylim=c(0,1),
-        xlab=&quot;Location&quot;, ylab=&quot;Posterior Probability&quot;, main=&quot;&quot;)
-   for (i in 1:(dim(cbs$output)[1]-1)) {
-     abline(v=cbs$output$loc.end[i], col=&quot;red&quot;)
-   }</code></pre>
+chrom11 &lt;- list(x=as.vector(na.omit(coriell$Coriell.05296[coriell$Chromosome==11])))
+chrom11$true_mean=rep(NA,length(chrom11$x))
+
+chrom11.res = apply_methods(chrom11)</code></pre>
+<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... 
+Analyzing: Sample.1 </code></pre>
+<pre class="r"><code>plot_results(chrom11.res,chrom11)</code></pre>
 <p><img src="figure/changepoint.Rmd/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of unnamed-chunk-14-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -1052,6 +1133,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/ef836ffe860594c2717af1f2097a0edb2caaddd9/docs/figure/changepoint.Rmd/unnamed-chunk-14-1.png" target="_blank">ef836ff</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-22
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 <a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-14-1.png" target="_blank">07cb570</a>
 </td>
 <td style="text-align:left;">
@@ -1064,15 +1156,12 @@ stephens999
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>   par(op3)
-   par(op)</code></pre>
 <p>Try susie. Note that this example illustrates a case where a variable (here 66) occurs in multiple CSs… something we don’t yet fully understand the implications of I think.</p>
-<pre class="r"><code>  chrom11.s = susie_cp(chrom11)
-  plot(1:n, chrom11, col=&quot;grey&quot;, pch=20, xlab=&quot;Location&quot;,
+<pre class="r"><code>  plot(chrom11$x, col=&quot;grey&quot;, pch=20, xlab=&quot;Location&quot;,
         ylab=&quot;Posterior Mean&quot;,
         main=&quot;Coriell chromosome 11 (DNAcopy)&quot;)
-  lines(predict(chrom11.s),col=2,lwd=2)
-  chrom11.s$sets</code></pre>
+  lines(predict(chrom11.res$fit$susie),col=2,lwd=2)
+  chrom11.res$fit$susie$sets</code></pre>
 <pre><code>$cs
 $cs$L2
 [1] 51
@@ -1099,8 +1188,7 @@ $cs_index
 
 $coverage
 [1] 0.95</code></pre>
-<pre class="r"><code>  abline(v=66)
-  abline(v=51)</code></pre>
+<pre class="r"><code>  plot_cs(chrom11.res$fit$susie)</code></pre>
 <p><img src="figure/changepoint.Rmd/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of unnamed-chunk-15-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -1120,6 +1208,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/ef836ffe860594c2717af1f2097a0edb2caaddd9/docs/figure/changepoint.Rmd/unnamed-chunk-15-1.png" target="_blank">ef836ff</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-22
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 <a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-15-1.png" target="_blank">07cb570</a>
 </td>
 <td style="text-align:left;">
@@ -1132,59 +1231,17 @@ stephens999
 </tbody>
 </table>
 <p></details></p>
+<p>Compare different objectives:</p>
 <p>An example from the DNAcopy <code>segment</code> function:</p>
 <pre class="r"><code>set.seed(51)
 true_mean = rep(c(-0.2,0.1,1,-0.5,0.2,-0.5,0.1,-0.2),c(137,87,17,49,29,52,87,42))
-genomdat &lt;- rnorm(500, sd=0.2) + true_mean
+genomdat = list(x = rnorm(500, sd=0.2) + true_mean, true_mean=true_mean)
 
-plot(genomdat)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-16-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of unnamed-chunk-16-1.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-<a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-16-1.png" target="_blank">07cb570</a>
-</td>
-<td style="text-align:left;">
-stephens999
-</td>
-<td style="text-align:left;">
-2018-10-19
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>chrom &lt;- rep(1:2,c(290,210))
-maploc &lt;- c(1:290,1:210)
-
-genomdat.seg &lt;- segment(CNA(genomdat, chrom, maploc))</code></pre>
-<pre><code>Analyzing: Sample.1 </code></pre>
-<pre class="r"><code>plot(genomdat.seg)
-genomdat.s = susie_cp(genomdat)
-
-
-plot_cs(genomdat.s)    
-lines(true_mean,col=1,type=&quot;s&quot;)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-16-2.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>plot(genomdat.s$pip)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-16-3.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>genomdat.bcp = bcp(genomdat)
-plot(genomdat.bcp)</code></pre>
+genomdat.res = apply_methods(genomdat)</code></pre>
+<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... 
+Analyzing: Sample.1 </code></pre>
+<pre class="r"><code>plot_results(genomdat.res,genomdat)
+plot_cs(genomdat.res$fit$susie)</code></pre>
 <p><img src="figure/changepoint.Rmd/unnamed-chunk-17-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of unnamed-chunk-17-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -1204,6 +1261,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/ef836ffe860594c2717af1f2097a0edb2caaddd9/docs/figure/changepoint.Rmd/unnamed-chunk-17-1.png" target="_blank">ef836ff</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-22
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 <a href="https://github.com/stephens999/susier-investigate/blob/07cb570cdd8fda55bfe220001eee1bbe33576a66/docs/figure/changepoint.Rmd/unnamed-chunk-17-1.png" target="_blank">07cb570</a>
 </td>
 <td style="text-align:left;">
@@ -1216,8 +1284,11 @@ stephens999
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>plot(genomdat.bcp$posterior.mean,predict(genomdat.s))</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-17-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>compute_error(genomdat.res,genomdat)</code></pre>
+<pre><code>       susie          bcp           l0           tf           cp 
+0.0009947353 0.0009007416 0.0031717817 0.0018339170 0.0961235912 
+     segment 
+0.0014030174 </code></pre>
 <p>This example from DNAcopy too. (commented out for now as takes too long.)</p>
 <pre class="r"><code># data(coriell)
 # 
@@ -1229,6 +1300,93 @@ stephens999
 # plot(CNA.object$c13330[!is.na(CNA.object$c13330)])
 # plot_cs(s)</code></pre>
 </div>
+<div id="compare-initializations" class="section level1">
+<h1>Compare initializations</h1>
+<p>Here we systematically compare intializing with trendfilter solution (L=20) with <code>susie_auto</code> and regular <code>susie</code> (run in two steps, first estimating residual variance, then estimating prior variance - this is because I am concerned estimating prior variance straight away may miss things, partly because at time of writing <code>susie_init_coef</code> may not be quite correct - it sets coefficients based on unstandardized X, but internally X are standardized)</p>
+<pre class="r"><code>#runs susie from both regular trend-filtering initialization
+compare_init = function(x,fit.tf){
+  bhat = fit.tf$beta[,20] #result with 20 changepoints
+  dhat = diff(bhat)
+  dhat = ifelse(abs(dhat)&gt;1e-8, dhat,0)
+  s0.tf = susie_init_coef(which(dhat!=0),dhat[dhat!=0],length(x)-1)
+  s.tf0 = susie_cp(x,s_init=s0.tf,estimate_prior_variance=FALSE)
+  s.tf = susie_cp(x,s_init=s.tf0,estimate_prior_variance=TRUE)
+  
+  s0 = susie_cp(x,estimate_prior_variance = FALSE)
+  s1 = susie_cp(x,estimate_prior_variance = TRUE)
+  
+  s_auto = susie_cp(x,auto=TRUE)
+  return(list(fit = list(tf=s.tf,s=s1,s_auto=s_auto), obj = list(tf=get_obj(s.tf),s = get_obj(s1),s_auto= get_obj(s_auto))))
+}</code></pre>
+<pre class="r"><code>compare_init(eg1$x,eg1.res$fit$tf)$obj</code></pre>
+<pre><code>$tf
+[1] -570.5648
+
+$s
+[1] -570.5647
+
+$s_auto
+[1] -570.5725</code></pre>
+<pre class="r"><code>compare_init(lai$x,lai.res$fit$tf)$obj</code></pre>
+<pre><code>$tf
+[1] -231.6866
+
+$s
+[1] -250.55
+
+$s_auto
+[1] -240.2309</code></pre>
+<pre class="r"><code>compare_init(lai.sim$x,lai.sim.res$fit$tf)$obj</code></pre>
+<pre><code>$tf
+[1] -208.4735
+
+$s
+[1] -256.8229
+
+$s_auto
+[1] -216.96</code></pre>
+<pre class="r"><code>compare_init(eg2$x,eg2.res$fit$tf)$obj</code></pre>
+<pre><code>$tf
+[1] -152.0881
+
+$s
+[1] -152.0881
+
+$s_auto
+[1] -152.0881</code></pre>
+<pre class="r"><code>c11 = compare_init(chrom11$x,chrom11.res$fit$tf)
+c11$obj</code></pre>
+<pre><code>$tf
+[1] 162.8466
+
+$s
+[1] 156.6296
+
+$s_auto
+[1] 172.5233</code></pre>
+<pre class="r"><code>compare_init(genomdat$x,genomdat.res$fit$tf)$obj</code></pre>
+<pre><code>$tf
+[1] 52.56285
+
+$s
+[1] 47.38582
+
+$s_auto
+[1] 43.65096</code></pre>
+<p>Follow up on chrom11. It seems that the susie auto fit works well here. The tf initialization induces extra changepoints that don’t have that good support, and susie struggles to lose these. This illustrates that failing to lose fits can be as problematic as failing to find them…</p>
+<pre class="r"><code>plot(chrom11$x)
+lines(predict(c11$fit$tf))
+lines(predict(c11$fit$s),col=2)
+lines(predict(c11$fit$s_auto),col=3)
+
+plot_cs(c11$fit$tf)
+plot_cs(c11$fit$s)
+plot_cs(c11$fit$s_auto)
+
+lines(chrom11.res$fit$bcp$posterior.mean)</code></pre>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-21-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(chrom11.res$fit$bcp$posterior.prob)</code></pre>
+<p><img src="figure/changepoint.Rmd/unnamed-chunk-21-2.png" width="672" style="display: block; margin: auto;" /></p>
 <div id="session-information" class="section level2">
 <h2>Session information</h2>
 <pre class="r"><code>sessionInfo()</code></pre>
@@ -1269,6 +1427,7 @@ loaded via a namespace (and not attached):
 [37] assertthat_0.2.0   colorspace_1.3-2   stringi_1.2.4     
 [40] lazyeval_0.2.1     munsell_0.5.0      crayon_1.3.4      
 [43] R.oo_1.22.0       </code></pre>
+</div>
 </div>
 
 <!-- Adjust MathJax settings so that all math formulae are shown using
