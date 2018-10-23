@@ -323,7 +323,7 @@ div.section {
 </div>
 
 
-<p><strong>Last updated:</strong> 2018-10-22</p>
+<p><strong>Last updated:</strong> 2018-10-23</p>
 <strong>workflowr checks:</strong> <small>(Click a bullet for more information)</small>
 <ul>
 <li>
@@ -347,7 +347,7 @@ div.section {
 </details>
 </li>
 <li>
-<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/stephens999/susier-investigate/tree/451b70eef1b18c5bb6e11d4648e9179550e3cc79" target="_blank">451b70e</a> </summary></p>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/stephens999/susier-investigate/tree/21b9bcc8ea2348f781b5d633c0b51d45f2354dbe" target="_blank">21b9bcc</a> </summary></p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 <pre><code>
 Ignored files:
@@ -358,12 +358,15 @@ Ignored files:
 
 Untracked files:
     Untracked:  analysis/cp_convergence.Rmd
+    Untracked:  analysis/cp_init_tf.Rmd
     Untracked:  analysis/null.Rmd
+    Untracked:  analysis/pelt.Rmd
     Untracked:  analysis/test.Rmd
     Untracked:  data/geneMatrix.tsv
     Untracked:  data/liter_data_4_summarize_ld_1_lm_less_3.rds
     Untracked:  data/meta.tsv
     Untracked:  docs/figure/cp_convergence.Rmd/
+    Untracked:  docs/figure/pelt.Rmd/
     Untracked:  docs/figure/test.Rmd/
 
 </code></pre>
@@ -393,6 +396,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/21b9bcc8ea2348f781b5d633c0b51d45f2354dbe/analysis/changepoint.Rmd" target="_blank">21b9bcc</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-23
+</td>
+<td style="text-align:left;">
+workflowr::wflow_publish(“analysis/changepoint.Rmd”)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+html
+</td>
+<td style="text-align:left;">
+<a href="https://cdn.rawgit.com/stephens999/susier-investigate/a9642dc8e3d32343976455d0161adee393d560f7/docs/changepoint.html" target="_blank">a9642dc</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-22
+</td>
+<td style="text-align:left;">
+Build site.
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 Rmd
@@ -582,8 +619,9 @@ Attaching package: &#39;zoo&#39;</code></pre>
 <pre class="r"><code>library(&quot;ggplot2&quot;)
 library(&quot;DNAcopy&quot;)
 
-
-susie_cp = function(y,auto=FALSE,...){
+# we set standardize to false because then the coefficients
+# have a consistent interpretation as step size 
+susie_cp = function(y,auto=FALSE,standardize=FALSE,...){
   n=length(y)
   X = matrix(0,nrow=n,ncol=n-1)
   for(j in 1:(n-1)){
@@ -592,9 +630,9 @@ susie_cp = function(y,auto=FALSE,...){
     }
   }
   if(auto){
-    s = susie_auto(X,y,...)
+    s = susie_auto(X,y,standardize=standardize,...)
   } else {
-    s = susie(X,y,...)
+    s = susie(X,y,standardize=standardize,...)
   }
   return(s)
 }
@@ -790,7 +828,7 @@ stephens999
 <p></details></p>
 <pre class="r"><code>compute_error(eg1.res,eg1)</code></pre>
 <pre><code>     susie        bcp         l0         tf         cp    segment 
-0.03081035 0.03669960 0.22505358 0.04564223 0.03673359 0.03093324 </code></pre>
+0.03127789 0.03669960 0.22505358 0.04564223 0.03673359 0.03093324 </code></pre>
 <p>Compare PIPs of bcp and susie:</p>
 <pre class="r"><code>plot(eg1.res$fit$bcp$posterior.prob[-1], susie_get_PIP(eg1.res$fit$susie))</code></pre>
 <p><img src="figure/changepoint.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
@@ -971,9 +1009,9 @@ plot(lai$x)
 lines(predict(lai.s.cp),col=2,type=&quot;s&quot;)
 lines(predict(lai.s.tf),col=3,type=&quot;s&quot;)
 get_obj(lai.s.cp)</code></pre>
-<pre><code>[1] -216.9692</code></pre>
+<pre><code>[1] -216.9681</code></pre>
 <pre class="r"><code>get_obj(lai.s.tf)</code></pre>
-<pre><code>[1] -220.1951</code></pre>
+<pre><code>[1] -250.555</code></pre>
 <pre class="r"><code>plot_cs(lai.s.cp)
 plot_cs(lai.s.tf)</code></pre>
 <p><img src="figure/changepoint.Rmd/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1099,7 +1137,7 @@ stephens999
 <p></details></p>
 <pre class="r"><code>compute_error(lai.sim.res,lai.sim)</code></pre>
 <pre><code>      susie         bcp          l0          tf          cp     segment 
-0.019417479 0.015219952 0.060841408 0.036559321 0.008346073 0.270791108 </code></pre>
+0.315497051 0.015219952 0.060841408 0.036559321 0.008346073 0.270791108 </code></pre>
 <pre class="r"><code>s0.cp = susie_init_coef(cpts(lai.sim.res$fit$cp),diff(unlist(coef(lai.sim.res$fit$cp))),length(lai.sim$x)-1)
 
 lai.sim.s.cp = susie_cp(lai.sim$x,s_init=s0.cp,estimate_prior_variance=FALSE)
@@ -1161,7 +1199,7 @@ stephens999
 </table>
 <p></details></p>
 <pre class="r"><code>mean((predict(lai.sim.s.cp2)-lai.sim$true_mean)^2)</code></pre>
-<pre><code>[1] 0.008400276</code></pre>
+<pre><code>[1] 0.008367509</code></pre>
 </div>
 <div id="example-from-the-bcp-package" class="section level2">
 <h2>Example from the BCP package</h2>
@@ -1223,7 +1261,7 @@ stephens999
 <p></details></p>
 <pre class="r"><code>compute_error(eg2.res,eg2)</code></pre>
 <pre><code>     susie        bcp         l0         tf         cp    segment 
-0.05442873 0.13518020 0.28787237 0.35619464 0.01434871 0.26689895 </code></pre>
+0.05450532 0.13518020 0.28787237 0.35619464 0.01434871 0.26689895 </code></pre>
 <p>Try estimating prior variance of susie initialized from previous results; also try initializing from results of <code>changepoint</code>.</p>
 <pre class="r"><code># estimate prior variance
 eg2.s2 = susie_cp(eg2$x,s_init=eg2.res$fit$susie,estimate_prior_variance=TRUE)
@@ -1236,13 +1274,13 @@ eg2.s.cp2 = susie_cp(eg2$x,s_init=eg2.s.cp,estimate_prior_variance=TRUE)
 
 
 get_obj(eg2.s.cp2)</code></pre>
-<pre><code>[1] -152.0881</code></pre>
+<pre><code>[1] -152.087</code></pre>
 <pre class="r"><code>get_obj(eg2.s2)</code></pre>
-<pre><code>[1] -152.0881</code></pre>
+<pre><code>[1] -152.6889</code></pre>
 <pre class="r"><code>mean((predict(eg2.s.cp2)-eg2$true_mean)^2)</code></pre>
-<pre><code>[1] 0.02948344</code></pre>
+<pre><code>[1] 0.02936138</code></pre>
 <pre class="r"><code>mean((predict(eg2.s2)-eg2$true_mean)^2)</code></pre>
-<pre><code>[1] 0.0294871</code></pre>
+<pre><code>[1] 0.0568752</code></pre>
 </div>
 <div id="dna-segmentation-example-from-bcp-package" class="section level2">
 <h2>DNA segmentation example from bcp package</h2>
@@ -1315,28 +1353,24 @@ stephens999
   lines(predict(chrom11.res$fit$susie),col=2,lwd=2)
   chrom11.res$fit$susie$sets</code></pre>
 <pre><code>$cs
+$cs$L1
+[1] 66
+
 $cs$L2
 [1] 51
 
 $cs$L3
-[1] 66
-
-$cs$L4
-[1] 63 64 66
-
-$cs$L1
-[1] 66 67 68 69 70 71
+[1] 63 64 66 67 68 69 70 71
 
 
 $purity
    min.abs.corr mean.abs.corr median.abs.corr
-L2    1.0000000     1.0000000       1.0000000
-L3    1.0000000     1.0000000       1.0000000
-L4    0.9649213     0.9843474       0.9880822
-L1    0.9436735     0.9778424       0.9772150
+L1    1.0000000      1.000000       1.0000000
+L2    1.0000000      1.000000       1.0000000
+L3    0.9105706      0.965819       0.9659186
 
 $cs_index
-[1] 2 3 4 1
+[1] 1 2 3
 
 $coverage
 [1] 0.95</code></pre>
@@ -1460,7 +1494,7 @@ stephens999
 <p></details></p>
 <pre class="r"><code>compute_error(genomdat.res,genomdat)</code></pre>
 <pre><code>       susie          bcp           l0           tf           cp 
-0.0009947353 0.0009007416 0.0031717817 0.0018339170 0.0961235912 
+0.0015949911 0.0009007416 0.0031717817 0.0018339170 0.0961235912 
      segment 
 0.0014030174 </code></pre>
 <p>This example from DNAcopy too. (commented out for now as takes too long.)</p>
@@ -1505,156 +1539,82 @@ compare_init = function(x,fit.tf){
 <pre class="r"><code>compare_init(eg1$x,eg1.res$fit$tf)$obj</code></pre>
 <pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
 <pre><code>$tf20
-[1] -570.5648
+[1] -570.5557
 
 $tf
-[1] -570.5647
+[1] -570.5558
 
 $s
-[1] -570.5647
+[1] -570.5559
 
 $s_auto
-[1] -570.5725</code></pre>
+[1] -570.5637</code></pre>
 <pre class="r"><code>compare_init(lai$x,lai.res$fit$tf)$obj</code></pre>
 <pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
 <pre><code>$tf20
-[1] -231.6866
+[1] -226.4172
 
 $tf
-[1] -266.9332
+[1] -226.6029
 
 $s
-[1] -250.55
+[1] -250.5503
 
 $s_auto
-[1] -240.2309</code></pre>
+[1] -217.0181</code></pre>
 <pre class="r"><code>compare_init(lai.sim$x,lai.sim.res$fit$tf)$obj</code></pre>
 <pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
 <pre><code>$tf20
-[1] -208.4735
+[1] -200.0482
 
 $tf
-[1] -208.4568
+[1] -200.0483
 
 $s
-[1] -256.8229
+[1] -248.9327
 
 $s_auto
-[1] -216.96</code></pre>
+[1] -216.9614</code></pre>
 <pre class="r"><code>compare_init(eg2$x,eg2.res$fit$tf)$obj</code></pre>
 <pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
 <pre><code>$tf20
-[1] -152.0881
+[1] -152.6792
 
 $tf
-[1] -152.0881
+[1] -152.668
 
 $s
-[1] -152.0881
+[1] -152.087
 
 $s_auto
-[1] -152.0881</code></pre>
+[1] -152.087</code></pre>
 <pre class="r"><code>c11 = compare_init(chrom11$x,chrom11.res$fit$tf)</code></pre>
 <pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
 <pre class="r"><code>c11$obj</code></pre>
 <pre><code>$tf20
-[1] 162.8466
+[1] 172.5228
 
 $tf
-[1] 149.9654
+[1] 172.523
 
 $s
-[1] 156.6296
+[1] 156.4556
 
 $s_auto
 [1] 172.5233</code></pre>
 <pre class="r"><code>compare_init(genomdat$x,genomdat.res$fit$tf)$obj</code></pre>
 <pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
 <pre><code>$tf20
-[1] 52.56285
+[1] 42.98781
 
 $tf
-[1] 41.96949
+[1] 42.88485
 
 $s
-[1] 47.38582
+[1] 45.9114
 
 $s_auto
-[1] 43.65096</code></pre>
-<p>Follow up on chrom11. It seems that the susie auto fit works well here. The tf initialization induces extra changepoints that don’t have that good support, and susie struggles to lose these. This illustrates that failing to lose fits can be as problematic as failing to find them…</p>
-<pre class="r"><code>plot(chrom11$x)
-lines(predict(c11$fit$tf))
-lines(predict(c11$fit$s),col=2)
-lines(predict(c11$fit$s_auto),col=3)
-
-plot_cs(c11$fit$tf)
-plot_cs(c11$fit$s)
-plot_cs(c11$fit$s_auto)
-
-lines(chrom11.res$fit$bcp$posterior.mean)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-21-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of unnamed-chunk-21-1.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-<a href="https://github.com/stephens999/susier-investigate/blob/431c7b35b8d0a1b09b08f0741fb7c416f02d05fa/docs/figure/changepoint.Rmd/unnamed-chunk-21-1.png" target="_blank">431c7b3</a>
-</td>
-<td style="text-align:left;">
-stephens999
-</td>
-<td style="text-align:left;">
-2018-10-22
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>plot(chrom11.res$fit$bcp$posterior.prob)</code></pre>
-<p><img src="figure/changepoint.Rmd/unnamed-chunk-21-2.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of unnamed-chunk-21-2.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-<a href="https://github.com/stephens999/susier-investigate/blob/431c7b35b8d0a1b09b08f0741fb7c416f02d05fa/docs/figure/changepoint.Rmd/unnamed-chunk-21-2.png" target="_blank">431c7b3</a>
-</td>
-<td style="text-align:left;">
-stephens999
-</td>
-<td style="text-align:left;">
-2018-10-22
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
+[1] 43.65838</code></pre>
 <div id="session-information" class="section level2">
 <h2>Session information</h2>
 <pre class="r"><code>sessionInfo()</code></pre>
@@ -1680,21 +1640,20 @@ other attached packages:
 [10] susieR_0.5.0.0347
 
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.19       bindr_0.1.1        compiler_3.5.1    
- [4] pillar_1.3.0       git2r_0.23.0       plyr_1.8.4        
- [7] workflowr_1.1.1    R.methodsS3_1.7.1  R.utils_2.7.0     
-[10] tools_3.5.1        digest_0.6.18      evaluate_0.12     
-[13] tibble_1.4.2       gtable_0.2.0       lattice_0.20-35   
-[16] pkgconfig_2.0.2    rlang_0.2.2        yaml_2.2.0        
-[19] bindrcpp_0.2.2     withr_2.1.2        stringr_1.3.1     
-[22] dplyr_0.7.7        knitr_1.20         tidyselect_0.2.5  
-[25] rprojroot_1.3-2    glue_1.3.0         R6_2.3.0          
-[28] rmarkdown_1.10     reshape2_1.4.3     purrr_0.2.5       
-[31] magrittr_1.5       whisker_0.3-2      matrixStats_0.54.0
-[34] backports_1.1.2    scales_1.0.0       htmltools_0.3.6   
-[37] assertthat_0.2.0   colorspace_1.3-2   stringi_1.2.4     
-[40] lazyeval_0.2.1     munsell_0.5.0      crayon_1.3.4      
-[43] R.oo_1.22.0       </code></pre>
+ [1] Rcpp_0.12.19      bindr_0.1.1       compiler_3.5.1   
+ [4] pillar_1.3.0      git2r_0.23.0      plyr_1.8.4       
+ [7] workflowr_1.1.1   R.methodsS3_1.7.1 R.utils_2.7.0    
+[10] tools_3.5.1       digest_0.6.18     evaluate_0.12    
+[13] tibble_1.4.2      gtable_0.2.0      lattice_0.20-35  
+[16] pkgconfig_2.0.2   rlang_0.2.2       yaml_2.2.0       
+[19] bindrcpp_0.2.2    withr_2.1.2       stringr_1.3.1    
+[22] dplyr_0.7.7       knitr_1.20        tidyselect_0.2.5 
+[25] rprojroot_1.3-2   glue_1.3.0        R6_2.3.0         
+[28] rmarkdown_1.10    reshape2_1.4.3    purrr_0.2.5      
+[31] magrittr_1.5      whisker_0.3-2     backports_1.1.2  
+[34] scales_1.0.0      htmltools_0.3.6   assertthat_0.2.0 
+[37] colorspace_1.3-2  stringi_1.2.4     lazyeval_0.2.1   
+[40] munsell_0.5.0     crayon_1.3.4      R.oo_1.22.0      </code></pre>
 </div>
 </div>
 
