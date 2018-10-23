@@ -1,0 +1,229 @@
+---
+title: "cp_convergence"
+author: "stephens999"
+date: "2018-10-20"
+output: workflowr::wflow_html
+---
+
+## Introduction
+
+Here we look at a simple but challenging example for convergence.
+
+It is based on the [changepoint problem](changepoint.html).
+
+First some code for running susie on changepoint problems:
+```{r}
+library("susieR")
+susie_cp = function(y,auto=FALSE,...){
+  n=length(y)
+  X = matrix(0,nrow=n,ncol=n-1)
+  for(j in 1:(n-1)){
+    for(i in (j+1):n){
+      X[i,j] = 1
+    }
+  }
+  if(auto){
+    s = susie_auto(X,y,...)
+  } else {
+    s = susie(X,y,...)
+  }
+  return(s)
+}
+```
+
+The following shows how initialization matters (and also
+how susie_auto does not find the optimal solution).
+```{r}
+set.seed(1)
+x = rnorm(100)
+x[50]=8
+x.s = susie_cp(x)
+x.s.auto = susie_cp(x,auto=TRUE)
+x.s.small = susie_cp(x,estimate_residual_variance=FALSE,residual_variance=0.001)
+x.s.small2 =  susie_cp(x,estimate_residual_variance=TRUE,s_init = x.s.small)
+x.s.small3 =  susie_cp(x,estimate_residual_variance=TRUE,estimate_prior_variance = TRUE, s_init = x.s.small2)
+
+plot(x)
+lines(predict(x.s),col=1)
+lines(predict(x.s.auto),col=2)
+lines(predict(x.s.small),col=3)
+lines(predict(x.s.small2),col=4)
+lines(predict(x.s.small3),col=5)
+get_obj = function(s){
+  return(s$elbo[length(s$elbo)])
+}
+get_obj(x.s)
+get_obj(x.s.auto)
+get_obj(x.s.small)
+get_obj(x.s.small2)
+get_obj(x.s.small3)
+```
+
+It turns out the explanation for why susie_auto does not work here
+is multi-fold. First, by default it uses L=1 first. When that
+results in no signal it stops.
+Second, even if we change that to L=2, it picks up a (false) signal
+at the end of the time series in its initial run. Then
+it zeros that out during refitting, and stops.
+
+
+This mimics initial fit of susie_auto with L=2 and illustrates:
+```{r}
+init_tol= 1
+standardize = TRUE
+intercept = TRUE
+tol = 0.01
+L=2
+Y=x
+max_iter = 100
+s.0 = susie_cp(Y, L = L, residual_variance = 0.01 * sd(Y)^2, 
+        tol = init_tol, scaled_prior_variance = .1, estimate_residual_variance = FALSE, 
+        estimate_prior_variance = FALSE, standardize = standardize, 
+        intercept = intercept, max_iter = max_iter)
+
+plot(x)
+lines(predict(s.0))
+```
+
+
+
+
+I thought that setting `L_init=10` would fix this. It kind of does,
+but actually ends up splitting the signal between 3 CSs, resulting in a worse objective.
+```{r}
+x.s.auto10 = susie_cp(x,auto=TRUE,L_init=10)
+get_obj(x.s.auto10)
+get_obj(x.s.small3)
+plot(x)
+lines(predict(x.s.auto10))
+susie_get_CS(x.s.auto10,dedup=FALSE)
+x.s.auto10$V
+x.s.auto10$sigma2
+x.s.small3$sets
+x.s.small3$V
+```
+
+I found it interesting that when we fit 10 effects, 
+susie uses duplicates to fit the same features rather
+than fit new features. However, if we up this it does eventually
+start fitting most of the features (actually noise) in the data.
+Furthermore, when we use this to initialize it zeros
+out the main signal. I am guessing this is because of all the duplication none of the effects looks "significant". This happens
+whether or not we estimate the prior variance. It suggests we may want to avoid duplicates in the original fit before refining.
+```{r}
+x.s0.L100 = susie_cp(x,estimate_residual_variance=FALSE,residual_variance=0.001,L=100)
+x.s1.L100 = susie_cp(x,estimate_residual_variance=TRUE,s_init=x.s0.L100)
+x.s2.L100 = susie_cp(x,estimate_residual_variance=TRUE, estimate_prior_variance=TRUE,s_init=x.s0.L100)
+
+plot(x)
+lines(predict(x.s0.L100))
+lines(predict(x.s1.L100),col=2)
+```
+
+I thought maybe we could use the objective to catch when 
+to stop increasing $L$, but actually with very small residual variance
+the objective keeps increasing with L (obvious with hindsight).
+```{r}
+Lseq = c(2,4,8,16,32,64)
+x.L = list()
+for(l in 1:length(Lseq)){
+  x.L[[l]] = susie_cp(x,estimate_residual_variance=FALSE,residual_variance=0.001,L=Lseq[l])
+}
+lapply(x.L,get_obj)
+```
+
+
+It is worth noting that all these results turn out to be very delicate... if you change the code to `x[50] = x[50]+8` rather
+than `x[50]=8` the objective for x.s.small3 is much worse (because it
+also has duplication problems i think)
+```{r}
+set.seed(1)
+x = rnorm(100)
+x[50]=x[50]+8
+x.s = susie_cp(x)
+x.s.auto = susie_cp(x,auto=TRUE)
+x.s.small = susie_cp(x,estimate_residual_variance=FALSE,residual_variance=0.001)
+x.s.small2 =  susie_cp(x,estimate_residual_variance=TRUE,s_init = x.s.small)
+x.s.small3 =  susie_cp(x,estimate_residual_variance=TRUE,estimate_prior_variance = TRUE, s_init = x.s.small2)
+
+plot(x)
+lines(predict(x.s),col=1)
+lines(predict(x.s.auto),col=2)
+lines(predict(x.s.small),col=3)
+lines(predict(x.s.small2),col=4)
+lines(predict(x.s.small3),col=5)
+
+get_obj(x.s)
+get_obj(x.s.auto)
+get_obj(x.s.small)
+get_obj(x.s.small2)
+get_obj(x.s.small3)
+```
+
+This example is also challenging for trendfiltering:
+```{r}
+library("genlasso")
+tf_cp = function(x){
+  x.tf = trendfilter(x,ord=0)
+  x.tf.cv = cv.trendfilter(x.tf)
+  opt = which(x.tf$lambda==x.tf.cv$lambda.min) #optimal value of lambda
+  x.tf.fit= x.tf$fit[,opt]
+  return(x.tf.fit)
+}
+x.tf.fit = tf_cp(x)
+plot(x)
+lines(x.tf.fit)
+```
+One possible issue here is that in the CV, because the changepoints involve only one observation point,
+the changepoint will always be present only in either the training or test sets.
+(Another possible problem is that to keep the cv error low 
+the L1 penalty has to be strong, so it overshrinks the signal and decides that it
+is not "significant".)
+
+
+# Initialize susie with trendfilter solution
+
+Here we do "backfitting" of susie to the trendfilter solution (with L=10):
+```{r}
+x.tf = trendfilter(x,ord=0)
+bhat = x.tf$beta[,10]
+dhat = diff(bhat)
+dhat = ifelse(abs(dhat)>1e-8, dhat,0)
+
+s0 = susie_init_coef(which(dhat!=0),dhat[dhat!=0],length(x)-1)
+x.s0 = susie_cp(x,s_init = s0, estimate_prior_variance=TRUE)
+plot(x)
+lines(predict(x.s0))
+get_obj(x.s0)
+```
+
+# Try L0learn
+
+I tried L0learn on this challenging problem.
+ The coordinate descent
+algorithm did not do well. The other algorithm (CDPSI) did ok in that the solution with 3 points
+includes the two true changepoints. But I could not get it to give a solution with only 2 points (I tried a manual grid of 1000 lambda values near the change from 1 to 3 support points).
+```{r}
+library("L0Learn")
+n = length(x)
+X = matrix(0,nrow=n,ncol=n-1)
+for(j in 1:(n-1)){
+  for(i in (j+1):n){
+    X[i,j] = 1
+  }
+}
+
+y.l0.CS = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.01,0.001,length=100)),algorithm="CS") 
+y.l0.CS$suppSize
+
+y.l0.CDPSI = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.0076,0.0075,length=1000)),algorithm="CDPSI") 
+y.l0.CDPSI$suppSize
+
+plot(x,main="green=CDPSI; red=CS")
+lines(predict(y.l0.CS,newx=X,lambda=y.l0.CS$lambda[[1]][min(which(y.l0.CS$suppSize[[1]]>1))]),col=2)
+lines(predict(y.l0.CDPSI,newx=X,lambda=y.l0.CDPSI$lambda[[1]][min(which(y.l0.CDPSI$suppSize[[1]]>1))]),col=3)
+
+```
+
+
+

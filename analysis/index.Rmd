@@ -8,4 +8,12 @@ output:
 
 - [An example of a poor convergence](false-positive.html)
 
-- [Changepoint example](changepoint.html)
+# Changepoint examples
+
+- [Some comparisons with various methods](changepoint.html)
+
+- [A challenging example for convergence](cp_convergence.html)
+
+- [Initializing with trendfiltering](cp_init_tf.html)
+
+- [An issue with the changepoint package depending on scale of data](pelt.html)

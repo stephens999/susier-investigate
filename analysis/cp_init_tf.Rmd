@@ -1,0 +1,95 @@
+---
+title: "cp_init_tf"
+author: "stephens999"
+date: "2018-10-23"
+output: workflowr::wflow_html
+---
+
+## Introduction
+
+Here I investigate using trendfilter to initialize the susie fit
+for changepoint problems.
+
+```{r}
+library("susieR")
+library("genlasso")
+library("L0Learn")
+library("bcp")
+library("changepoint")
+library("ggplot2")
+library("DNAcopy")
+
+susie_cp = function(y,auto=FALSE,...){
+  n=length(y)
+  X = matrix(0,nrow=n,ncol=n-1)
+  for(j in 1:(n-1)){
+    for(i in (j+1):n){
+      X[i,j] = 1
+    }
+  }
+  if(auto){
+    s = susie_auto(X,y,...)
+  } else {
+    s = susie(X,y,...)
+  }
+  return(s)
+}
+```
+
+The goal here is to define an automatic version of susie for changepoint problems based on initializing from a trendfilter fit.
+```{r}
+# runs susie initialized to fit from trendfilter with L changepoints
+susie_cp_tf = function(y,fit.tf,L){
+  bhat = fit.tf$beta[,L] #result with L changepoints
+  dhat = diff(bhat)
+  dhat = ifelse(abs(dhat)>1e-8, dhat,0)
+  s0.tf = susie_init_coef(which(dhat!=0),dhat[dhat!=0],length(y)-1)
+  print(which(dhat!=0))
+  print(dhat[dhat!=0])
+  s0.tf.2 = susie_cp(y,s_init=s0.tf,estimate_prior_variance=FALSE)
+  s = susie_cp(y,s_init=s0.tf.2,estimate_prior_variance=TRUE)
+  return(s)
+}
+
+
+get_obj = function(s){
+  return(s$elbo[length(s$elbo)])
+}
+
+
+
+# This function simply runs susie for L=1,2,4,8. If the best is not L=8 then
+# it returns the best of these. Otherwise it keeps doubling L until the solution gets worse.
+susie_cp_auto_tf = function(y,fit.tf){
+  s=list()
+  s[[1]] = susie_cp_tf(y,fit.tf,1+1) #+1 because first solution is constant (no breakpoints)
+  s[[2]] = susie_cp_tf(y,fit.tf,2+1)
+  s[[3]] = susie_cp_tf(y,fit.tf,4+1)
+  s[[4]] = susie_cp_tf(y,fit.tf,8+1)
+  obj = lapply(s,get_obj)
+  opt = which.max(obj)
+  if(opt!=4){
+    return(s[[opt]])
+  } else {
+    L=8
+    s_old = s[[4]]
+    repeat{
+      s_new = susie_cp_tf(y,fit.tf,2*L+1)
+      if(get_obj(s_new) < get_obj(s_old)){break;}
+      L = L*2
+      s_old = s_new
+    }
+  }
+  return(s_old)
+}
+ 
+```
+
+```{r}
+data(Lai2005fig4)
+lai = list(x=Lai2005fig4[,5],true_mean = rep(NA,length(Lai2005fig4[,5])))
+lai.tf = trendfilter(lai$x,ord=0)
+s= susie_cp_auto_tf(lai$x, lai.tf)
+get_obj(s)
+```
+
