@@ -1,0 +1,42 @@
+---
+title: "pelt"
+author: "stephens999"
+date: "2018-10-23"
+output: workflowr::wflow_html
+---
+
+## Introduction
+
+The idea here is to check into why the default method for `cpt.mean` 
+function did not perfom well on some examples.
+```{r}
+library(changepoint)
+```
+
+```{r}
+set.seed(51)
+true_mean = rep(c(-0.2,0.1,1,-0.5,0.2,-0.5,0.1,-0.2),c(137,87,17,49,29,52,87,42))
+genomdat = list(x = rnorm(500, sd=0.2) + true_mean, true_mean=true_mean)
+```
+
+The `cpt.mean` default does not find any changepoints:
+```{r}
+genomdat.cp = cpt.mean(genomdat$x,method="PELT")
+plot(genomdat.cp)
+```
+
+Interestingly if we just multiply the data by 10 we find many changepoints.
+```{r}
+genomdat.cp = cpt.mean(10*genomdat$x,method="PELT")
+plot(genomdat.cp)
+```
+
+And if we multiply by 100 we find many, many changepoints
+```{r}
+genomdat.cp = cpt.mean(100*genomdat$x,method="PELT")
+plot(genomdat.cp)
+```
+
+  
+I suspect that the cost function may implicitly assume residual variance is 1; I opened an issue on the `checkpoint` github page.
+
