@@ -347,7 +347,7 @@ div.section {
 </details>
 </li>
 <li>
-<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/stephens999/susier-investigate/tree/1cb3dbd76ee52cfb53eae9be59936e148d05414d" target="_blank">1cb3dbd</a> </summary></p>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/stephens999/susier-investigate/tree/0c1559e1166220caf416690889616348f79b4156" target="_blank">0c1559e</a> </summary></p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 <pre><code>
 Ignored files:
@@ -362,7 +362,6 @@ Untracked files:
     Untracked:  data/geneMatrix.tsv
     Untracked:  data/liter_data_4_summarize_ld_1_lm_less_3.rds
     Untracked:  data/meta.tsv
-    Untracked:  docs/figure/cp_convergence.Rmd/
     Untracked:  docs/figure/test.Rmd/
 
 </code></pre>
@@ -392,6 +391,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/0c1559e1166220caf416690889616348f79b4156/analysis/cp_init_tf.Rmd" target="_blank">0c1559e</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-23
+</td>
+<td style="text-align:left;">
+workflowr::wflow_publish(c(“analysis/cp_init_tf.Rmd”))
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+html
+</td>
+<td style="text-align:left;">
+<a href="https://cdn.rawgit.com/stephens999/susier-investigate/7e026dccb8d80fc76279ad1052cb390916f86c6e/docs/cp_init_tf.html" target="_blank">7e026dc</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-23
+</td>
+<td style="text-align:left;">
+Build site.
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 Rmd
@@ -444,7 +477,7 @@ Attaching package: &#39;zoo&#39;</code></pre>
 <pre class="r"><code>library(&quot;ggplot2&quot;)
 library(&quot;DNAcopy&quot;)
 
-susie_cp = function(y,auto=FALSE,...){
+susie_cp = function(y,auto=FALSE,standardize=FALSE,...){
   n=length(y)
   X = matrix(0,nrow=n,ncol=n-1)
   for(j in 1:(n-1)){
@@ -453,9 +486,9 @@ susie_cp = function(y,auto=FALSE,...){
     }
   }
   if(auto){
-    s = susie_auto(X,y,...)
+    s = susie_auto(X,y,standardize=standardize,...)
   } else {
-    s = susie(X,y,...)
+    s = susie(X,y,standardize=standardize,...)
   }
   return(s)
 }</code></pre>
@@ -521,9 +554,18 @@ s= susie_cp_auto_tf(lai$x, lai.tf)</code></pre>
  [1]  0.21349567 -0.05480517 -0.29508482  0.10029882  0.10605781
  [6]  3.25513106 -2.04571074  2.43203643 -3.27060894 -0.28135461
 [11] -0.09663054 -0.00358927  0.91343018  1.98491595  0.80171487
-[16] -3.75142321</code></pre>
+[16] -3.75142321
+ [1]  11  25  26  28  32  33  49  53  54  55  72  76  81  85  89  95  96
+[18]  97  98 103 111 115 122 123 125 128 133 147 154 159 176 187
+ [1]  0.041095098  0.234687244  0.208869253  0.113288205 -0.064854824
+ [6] -0.312107804 -0.484548824 -0.268979866  0.211009797  0.218026009
+[11]  0.129706880  0.106057814  3.746048802 -3.027546224  3.246206677
+[16] -0.299096566 -3.294764884 -0.281354613 -0.096630542 -0.155801964
+[21]  0.070944289  0.021140435  0.973558155  1.984915946  0.916096260
+[26]  0.209723965 -4.152694944  0.043316043  0.003419216  0.089376319
+[31] -0.048950754 -0.114062027</code></pre>
 <pre class="r"><code>get_obj(s)</code></pre>
-<pre><code>[1] -220.2241</code></pre>
+<pre><code>[1] -226.2105</code></pre>
 </div>
 <div id="session-information" class="section level2">
 <h2>Session information</h2>
@@ -550,21 +592,20 @@ other attached packages:
 [10] susieR_0.5.0.0347
 
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.19       bindr_0.1.1        compiler_3.5.1    
- [4] pillar_1.3.0       git2r_0.23.0       plyr_1.8.4        
- [7] workflowr_1.1.1    R.methodsS3_1.7.1  R.utils_2.7.0     
-[10] tools_3.5.1        digest_0.6.18      evaluate_0.12     
-[13] tibble_1.4.2       gtable_0.2.0       lattice_0.20-35   
-[16] pkgconfig_2.0.2    rlang_0.2.2        yaml_2.2.0        
-[19] bindrcpp_0.2.2     withr_2.1.2        stringr_1.3.1     
-[22] dplyr_0.7.7        knitr_1.20         tidyselect_0.2.5  
-[25] rprojroot_1.3-2    glue_1.3.0         R6_2.3.0          
-[28] rmarkdown_1.10     reshape2_1.4.3     purrr_0.2.5       
-[31] magrittr_1.5       whisker_0.3-2      matrixStats_0.54.0
-[34] backports_1.1.2    scales_1.0.0       htmltools_0.3.6   
-[37] assertthat_0.2.0   colorspace_1.3-2   stringi_1.2.4     
-[40] lazyeval_0.2.1     munsell_0.5.0      crayon_1.3.4      
-[43] R.oo_1.22.0       </code></pre>
+ [1] Rcpp_0.12.19      bindr_0.1.1       compiler_3.5.1   
+ [4] pillar_1.3.0      git2r_0.23.0      plyr_1.8.4       
+ [7] workflowr_1.1.1   R.methodsS3_1.7.1 R.utils_2.7.0    
+[10] tools_3.5.1       digest_0.6.18     evaluate_0.12    
+[13] tibble_1.4.2      gtable_0.2.0      lattice_0.20-35  
+[16] pkgconfig_2.0.2   rlang_0.2.2       yaml_2.2.0       
+[19] bindrcpp_0.2.2    withr_2.1.2       stringr_1.3.1    
+[22] dplyr_0.7.7       knitr_1.20        tidyselect_0.2.5 
+[25] rprojroot_1.3-2   glue_1.3.0        R6_2.3.0         
+[28] rmarkdown_1.10    reshape2_1.4.3    purrr_0.2.5      
+[31] magrittr_1.5      whisker_0.3-2     backports_1.1.2  
+[34] scales_1.0.0      htmltools_0.3.6   assertthat_0.2.0 
+[37] colorspace_1.3-2  stringi_1.2.4     lazyeval_0.2.1   
+[40] munsell_0.5.0     crayon_1.3.4      R.oo_1.22.0      </code></pre>
 </div>
 
 <!-- Adjust MathJax settings so that all math formulae are shown using
