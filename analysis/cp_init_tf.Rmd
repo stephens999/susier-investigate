@@ -19,7 +19,7 @@ library("changepoint")
 library("ggplot2")
 library("DNAcopy")
 
-susie_cp = function(y,auto=FALSE,...){
+susie_cp = function(y,auto=FALSE,standardize=FALSE,...){
   n=length(y)
   X = matrix(0,nrow=n,ncol=n-1)
   for(j in 1:(n-1)){
@@ -28,9 +28,9 @@ susie_cp = function(y,auto=FALSE,...){
     }
   }
   if(auto){
-    s = susie_auto(X,y,...)
+    s = susie_auto(X,y,standardize=standardize,...)
   } else {
-    s = susie(X,y,...)
+    s = susie(X,y,standardize=standardize,...)
   }
   return(s)
 }
