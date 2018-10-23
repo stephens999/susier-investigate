@@ -364,22 +364,32 @@ This example from DNAcopy too. (commented out for now as takes too long.)
 # Compare initializations
 
 Here we systematically compare intializing with trendfilter solution
-(L=20) with `susie_auto` and regular `susie` (run in two steps, first estimating residual variance, then estimating prior variance - this is because I am concerned estimating prior variance straight away may miss things, partly because at time of writing `susie_init_coef` may not be quite correct - it sets coefficients based on unstandardized X, but internally X are standardized) 
+(L=20, and cross-validation optimum) with `susie_auto` and regular `susie` (run in two steps, first estimating residual variance, then estimating prior variance - this is because I am concerned estimating prior variance straight away may miss things, partly because at time of writing `susie_init_coef` may not be quite correct - it sets coefficients based on unstandardized X, but internally X are standardized) 
 ```{r}
 #runs susie from both regular trend-filtering initialization
 compare_init = function(x,fit.tf){
   bhat = fit.tf$beta[,20] #result with 20 changepoints
   dhat = diff(bhat)
   dhat = ifelse(abs(dhat)>1e-8, dhat,0)
+  s0.tf20 = susie_init_coef(which(dhat!=0),dhat[dhat!=0],length(x)-1)
+  s0.tf20.2 = susie_cp(x,s_init=s0.tf20,estimate_prior_variance=FALSE)
+  s.tf20 = susie_cp(x,s_init=s0.tf20.2,estimate_prior_variance=TRUE)
+  
+  fit.tf.cv = cv.trendfilter(fit.tf)
+  opt = which(fit.tf$lambda==fit.tf.cv$lambda.min) #optimal value of lambda
+  bhat = fit.tf$beta[,opt] #result with 20 changepoints
+  dhat = diff(bhat)
+  dhat = ifelse(abs(dhat)>1e-8, dhat,0)
   s0.tf = susie_init_coef(which(dhat!=0),dhat[dhat!=0],length(x)-1)
-  s.tf0 = susie_cp(x,s_init=s0.tf,estimate_prior_variance=FALSE)
-  s.tf = susie_cp(x,s_init=s.tf0,estimate_prior_variance=TRUE)
+  s0.tf.2 = susie_cp(x,s_init=s0.tf,estimate_prior_variance=FALSE)
+  s.tf = susie_cp(x,s_init=s0.tf.2,estimate_prior_variance=TRUE)
+  
   
   s0 = susie_cp(x,estimate_prior_variance = FALSE)
   s1 = susie_cp(x,estimate_prior_variance = TRUE)
   
   s_auto = susie_cp(x,auto=TRUE)
-  return(list(fit = list(tf=s.tf,s=s1,s_auto=s_auto), obj = list(tf=get_obj(s.tf),s = get_obj(s1),s_auto= get_obj(s_auto))))
+  return(list(fit = list(tf20=s.tf20, tf=s.tf,s=s1,s_auto=s_auto), obj = list(tf20 = get_obj(s.tf20), tf=get_obj(s.tf),s = get_obj(s1),s_auto= get_obj(s_auto))))
 }
 ```
 
