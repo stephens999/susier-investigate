@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="stephens999" />
+
+<meta name="date" content="2018-10-20" />
+
+<title>cp_convergence</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-5.0.13/css/fa-svg-with-js.css" rel="stylesheet" />
+<script src="site_libs/font-awesome-5.0.13/js/fontawesome-all.min.js"></script>
+<script src="site_libs/font-awesome-5.0.13/js/fa-v4-shims.min.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">susier-investigate</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/jdblischak/workflowr">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">cp_convergence</h1>
+<h4 class="author"><em>stephens999</em></h4>
+<h4 class="date"><em>2018-10-20</em></h4>
+
+</div>
+
+
+<p><strong>Last updated:</strong> 2018-10-23</p>
+<strong>workflowr checks:</strong> <small>(Click a bullet for more information)</small>
+<ul>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>R Markdown file:</strong> up-to-date </summary></p>
+<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Environment:</strong> empty </summary></p>
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Seed:</strong> <code>set.seed(20180414)</code> </summary></p>
+<p>The command <code>set.seed(20180414)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Session information:</strong> recorded </summary></p>
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/stephens999/susier-investigate/tree/1cb3dbd76ee52cfb53eae9be59936e148d05414d" target="_blank">1cb3dbd</a> </summary></p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+    Ignored:    analysis/.Rhistory
+
+Untracked files:
+    Untracked:  analysis/null.Rmd
+    Untracked:  analysis/test.Rmd
+    Untracked:  data/geneMatrix.tsv
+    Untracked:  data/liter_data_4_summarize_ld_1_lm_less_3.rds
+    Untracked:  data/meta.tsv
+    Untracked:  docs/figure/test.Rmd/
+
+</code></pre>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes. </details>
+</li>
+</ul>
+<details> <summary> <small><strong>Expand here to see past versions:</strong></small> </summary>
+<ul>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+File
+</th>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+<th style="text-align:left;">
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/1cb3dbd76ee52cfb53eae9be59936e148d05414d/analysis/cp_convergence.Rmd" target="_blank">1cb3dbd</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-10-23
+</td>
+<td style="text-align:left;">
+workflowr::wflow_publish(c(“analysis/cp_convergence.Rmd”,
+</td>
+</tr>
+</tbody>
+</table>
+</ul>
+<p></details></p>
+<hr />
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Here we look at a simple but challenging example for convergence.</p>
+<p>It is based on the <a href="changepoint.html">changepoint problem</a>.</p>
+<p>First some code for running susie on changepoint problems:</p>
+<pre class="r"><code>library(&quot;susieR&quot;)
+susie_cp = function(y,auto=FALSE,...){
+  n=length(y)
+  X = matrix(0,nrow=n,ncol=n-1)
+  for(j in 1:(n-1)){
+    for(i in (j+1):n){
+      X[i,j] = 1
+    }
+  }
+  if(auto){
+    s = susie_auto(X,y,...)
+  } else {
+    s = susie(X,y,...)
+  }
+  return(s)
+}</code></pre>
+<p>The following shows how initialization matters (and also how susie_auto does not find the optimal solution).</p>
+<pre class="r"><code>set.seed(1)
+x = rnorm(100)
+x[50]=8
+x.s = susie_cp(x)
+x.s.auto = susie_cp(x,auto=TRUE)
+x.s.small = susie_cp(x,estimate_residual_variance=FALSE,residual_variance=0.001)
+x.s.small2 =  susie_cp(x,estimate_residual_variance=TRUE,s_init = x.s.small)
+x.s.small3 =  susie_cp(x,estimate_residual_variance=TRUE,estimate_prior_variance = TRUE, s_init = x.s.small2)
+
+plot(x)
+lines(predict(x.s),col=1)
+lines(predict(x.s.auto),col=2)
+lines(predict(x.s.small),col=3)
+lines(predict(x.s.small2),col=4)
+lines(predict(x.s.small3),col=5)</code></pre>
+<p><img src="figure/cp_convergence.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>get_obj = function(s){
+  return(s$elbo[length(s$elbo)])
+}
+get_obj(x.s)</code></pre>
+<pre><code>[1] -172.8635</code></pre>
+<pre class="r"><code>get_obj(x.s.auto)</code></pre>
+<pre><code>[1] -159.0861</code></pre>
+<pre class="r"><code>get_obj(x.s.small)</code></pre>
+<pre><code>[1] -32931.5</code></pre>
+<pre class="r"><code>get_obj(x.s.small2)</code></pre>
+<pre><code>[1] -175.5246</code></pre>
+<pre class="r"><code>get_obj(x.s.small3)</code></pre>
+<pre><code>[1] -148.0106</code></pre>
+<p>It turns out the explanation for why susie_auto does not work here is multi-fold. First, by default it uses L=1 first. When that results in no signal it stops. Second, even if we change that to L=2, it picks up a (false) signal at the end of the time series in its initial run. Then it zeros that out during refitting, and stops.</p>
+<p>This mimics initial fit of susie_auto with L=2 and illustrates:</p>
+<pre class="r"><code>init_tol= 1
+standardize = TRUE
+intercept = TRUE
+tol = 0.01
+L=2
+Y=x
+max_iter = 100
+s.0 = susie_cp(Y, L = L, residual_variance = 0.01 * sd(Y)^2, 
+        tol = init_tol, scaled_prior_variance = .1, estimate_residual_variance = FALSE, 
+        estimate_prior_variance = FALSE, standardize = standardize, 
+        intercept = intercept, max_iter = max_iter)
+
+plot(x)
+lines(predict(s.0))</code></pre>
+<p><img src="figure/cp_convergence.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>I thought that setting <code>L_init=10</code> would fix this. It kind of does, but actually ends up splitting the signal between 3 CSs, resulting in a worse objective.</p>
+<pre class="r"><code>x.s.auto10 = susie_cp(x,auto=TRUE,L_init=10)
+get_obj(x.s.auto10)</code></pre>
+<pre><code>[1] -176.389</code></pre>
+<pre class="r"><code>get_obj(x.s.small3)</code></pre>
+<pre><code>[1] -148.0106</code></pre>
+<pre class="r"><code>plot(x)
+lines(predict(x.s.auto10))</code></pre>
+<p><img src="figure/cp_convergence.Rmd/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>susie_get_CS(x.s.auto10,dedup=FALSE)</code></pre>
+<pre><code>$cs
+$cs[[1]]
+ [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+[24] 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46
+[47] 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69
+[70] 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92
+[93] 93 94 95
+
+$cs[[2]]
+[1] 49
+
+$cs[[3]]
+[1] 50
+
+$cs[[4]]
+ [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+[24] 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46
+[47] 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69
+[70] 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92
+[93] 93 94 95
+
+$cs[[5]]
+[1] 49
+
+$cs[[6]]
+ [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+[24] 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46
+[47] 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69
+[70] 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92
+[93] 93 94 95
+
+$cs[[7]]
+ [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+[24] 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46
+[47] 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69
+[70] 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92
+[93] 93 94 95
+
+$cs[[8]]
+[1] 50 51
+
+$cs[[9]]
+[1] 49
+
+$cs[[10]]
+[1] 50
+
+
+$coverage
+[1] 0.95</code></pre>
+<pre class="r"><code>x.s.auto10$V</code></pre>
+<pre><code> [1] 0.000000 1.632027 1.692485 0.000000 1.423064 0.000000 0.000000
+ [8] 1.336395 1.502874 1.494424</code></pre>
+<pre class="r"><code>x.s.auto10$sigma2</code></pre>
+<pre><code>[1] 0.8609335</code></pre>
+<pre class="r"><code>x.s.small3$sets</code></pre>
+<pre><code>$cs
+$cs$L2
+[1] 50
+
+$cs$L3
+[1] 49
+
+
+$purity
+   min.abs.corr mean.abs.corr median.abs.corr
+L2            1             1               1
+L3            1             1               1
+
+$cs_index
+[1] 2 3
+
+$coverage
+[1] 0.95</code></pre>
+<pre class="r"><code>x.s.small3$V</code></pre>
+<pre><code> [1]  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000
+ [8]  0.00000 14.31169 14.44124</code></pre>
+<p>I found it interesting that when we fit 10 effects, susie uses duplicates to fit the same features rather than fit new features. However, if we up this it does eventually start fitting most of the features (actually noise) in the data. Furthermore, when we use this to initialize it zeros out the main signal. I am guessing this is because of all the duplication none of the effects looks “significant”. This happens whether or not we estimate the prior variance. It suggests we may want to avoid duplicates in the original fit before refining.</p>
+<pre class="r"><code>x.s0.L100 = susie_cp(x,estimate_residual_variance=FALSE,residual_variance=0.001,L=100)
+x.s1.L100 = susie_cp(x,estimate_residual_variance=TRUE,s_init=x.s0.L100)
+x.s2.L100 = susie_cp(x,estimate_residual_variance=TRUE, estimate_prior_variance=TRUE,s_init=x.s0.L100)
+
+plot(x)
+lines(predict(x.s0.L100))
+lines(predict(x.s1.L100),col=2)</code></pre>
+<p><img src="figure/cp_convergence.Rmd/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>I thought maybe we could use the objective to catch when to stop increasing <span class="math inline">\(L\)</span>, but actually with very small residual variance the objective keeps increasing with L (obvious with hindsight).</p>
+<pre class="r"><code>Lseq = c(2,4,8,16,32,64)
+x.L = list()
+for(l in 1:length(Lseq)){
+  x.L[[l]] = susie_cp(x,estimate_residual_variance=FALSE,residual_variance=0.001,L=Lseq[l])
+}
+lapply(x.L,get_obj)</code></pre>
+<pre><code>[[1]]
+[1] -66146.56
+
+[[2]]
+[1] -35309.13
+
+[[3]]
+[1] -32921.31
+
+[[4]]
+[1] -30555.64
+
+[[5]]
+[1] -22088.78
+
+[[6]]
+[1] -11077.72</code></pre>
+<p>It is worth noting that all these results turn out to be very delicate… if you change the code to <code>x[50] = x[50]+8</code> rather than <code>x[50]=8</code> the objective for x.s.small3 is much worse (because it also has duplication problems i think)</p>
+<pre class="r"><code>set.seed(1)
+x = rnorm(100)
+x[50]=x[50]+8
+x.s = susie_cp(x)
+x.s.auto = susie_cp(x,auto=TRUE)
+x.s.small = susie_cp(x,estimate_residual_variance=FALSE,residual_variance=0.001)
+x.s.small2 =  susie_cp(x,estimate_residual_variance=TRUE,s_init = x.s.small)
+x.s.small3 =  susie_cp(x,estimate_residual_variance=TRUE,estimate_prior_variance = TRUE, s_init = x.s.small2)
+
+plot(x)
+lines(predict(x.s),col=1)
+lines(predict(x.s.auto),col=2)
+lines(predict(x.s.small),col=3)
+lines(predict(x.s.small2),col=4)
+lines(predict(x.s.small3),col=5)</code></pre>
+<p><img src="figure/cp_convergence.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>get_obj(x.s)</code></pre>
+<pre><code>[1] -177.78</code></pre>
+<pre class="r"><code>get_obj(x.s.auto)</code></pre>
+<pre><code>[1] -163.9949</code></pre>
+<pre class="r"><code>get_obj(x.s.small)</code></pre>
+<pre><code>[1] -32934.03</code></pre>
+<pre class="r"><code>get_obj(x.s.small2)</code></pre>
+<pre><code>[1] -188.1544</code></pre>
+<pre class="r"><code>get_obj(x.s.small3)</code></pre>
+<pre><code>[1] -177.2</code></pre>
+<p>This example is also challenging for trendfiltering:</p>
+<pre class="r"><code>library(&quot;genlasso&quot;)</code></pre>
+<pre><code>Loading required package: Matrix</code></pre>
+<pre><code>Loading required package: igraph</code></pre>
+<pre><code>
+Attaching package: &#39;igraph&#39;</code></pre>
+<pre><code>The following objects are masked from &#39;package:stats&#39;:
+
+    decompose, spectrum</code></pre>
+<pre><code>The following object is masked from &#39;package:base&#39;:
+
+    union</code></pre>
+<pre class="r"><code>tf_cp = function(x){
+  x.tf = trendfilter(x,ord=0)
+  x.tf.cv = cv.trendfilter(x.tf)
+  opt = which(x.tf$lambda==x.tf.cv$lambda.min) #optimal value of lambda
+  x.tf.fit= x.tf$fit[,opt]
+  return(x.tf.fit)
+}
+x.tf.fit = tf_cp(x)</code></pre>
+<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
+<pre class="r"><code>plot(x)
+lines(x.tf.fit)</code></pre>
+<p><img src="figure/cp_convergence.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /> One possible issue here is that in the CV, because the changepoints involve only one observation point, the changepoint will always be present only in either the training or test sets. (Another possible problem is that to keep the cv error low the L1 penalty has to be strong, so it overshrinks the signal and decides that it is not “significant”.)</p>
+</div>
+<div id="initialize-susie-with-trendfilter-solution" class="section level1">
+<h1>Initialize susie with trendfilter solution</h1>
+<p>Here we do “backfitting” of susie to the trendfilter solution (with L=10):</p>
+<pre class="r"><code>x.tf = trendfilter(x,ord=0)
+bhat = x.tf$beta[,10]
+dhat = diff(bhat)
+dhat = ifelse(abs(dhat)&gt;1e-8, dhat,0)
+
+s0 = susie_init_coef(which(dhat!=0),dhat[dhat!=0],length(x)-1)
+x.s0 = susie_cp(x,s_init = s0, estimate_prior_variance=TRUE)
+plot(x)
+lines(predict(x.s0))</code></pre>
+<p><img src="figure/cp_convergence.Rmd/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>get_obj(x.s0)</code></pre>
+<pre><code>[1] -148.2271</code></pre>
+</div>
+<div id="try-l0learn" class="section level1">
+<h1>Try L0learn</h1>
+<p>I tried L0learn on this challenging problem. The coordinate descent algorithm did not do well. The other algorithm (CDPSI) did ok in that the solution with 3 points includes the two true changepoints. But I could not get it to give a solution with only 2 points (I tried a manual grid of 1000 lambda values near the change from 1 to 3 support points).</p>
+<pre class="r"><code>library(&quot;L0Learn&quot;)
+n = length(x)
+X = matrix(0,nrow=n,ncol=n-1)
+for(j in 1:(n-1)){
+  for(i in (j+1):n){
+    X[i,j] = 1
+  }
+}
+
+y.l0.CS = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.01,0.001,length=100)),algorithm=&quot;CS&quot;) 
+y.l0.CS$suppSize</code></pre>
+<pre><code>[[1]]
+  [1]  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
+ [24]  1  1  1  1  1  4  4  4  4  4  4  4  5  5  5  5  5  5  5  5  5  5  5
+ [47]  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5
+ [70]  5  5  5  5  5  5  5  5  5  5  5  5  5  8  8  8  8  8  8  8  8  8  8
+ [93]  8  8 15 15 15 15 17 17</code></pre>
+<pre class="r"><code>y.l0.CDPSI = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.0076,0.0075,length=1000)),algorithm=&quot;CDPSI&quot;) 
+y.l0.CDPSI$suppSize</code></pre>
+<pre><code>[[1]]
+   [1] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+  [35] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+  [69] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [103] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [137] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [171] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [205] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [239] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [273] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [307] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [341] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [375] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [409] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [443] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [477] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [511] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [545] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [579] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [613] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [647] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 3 3 3 3 3
+ [681] 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ [715] 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ [749] 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ [783] 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ [817] 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ [851] 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ [885] 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ [919] 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ [953] 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ [987] 3 3 3 3 3 3 3 3 3 3 3 3 3 3</code></pre>
+<pre class="r"><code>plot(x,main=&quot;green=CDPSI; red=CS&quot;)
+lines(predict(y.l0.CS,newx=X,lambda=y.l0.CS$lambda[[1]][min(which(y.l0.CS$suppSize[[1]]&gt;1))]),col=2)
+lines(predict(y.l0.CDPSI,newx=X,lambda=y.l0.CDPSI$lambda[[1]][min(which(y.l0.CDPSI$suppSize[[1]]&gt;1))]),col=3)</code></pre>
+<p><img src="figure/cp_convergence.Rmd/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+<div id="session-information" class="section level2">
+<h2>Session information</h2>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 3.5.1 (2018-07-02)
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+Running under: OS X El Capitan 10.11.6
+
+Matrix products: default
+BLAS: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] L0Learn_1.0.7     genlasso_1.4      igraph_1.2.2      Matrix_1.2-14    
+[5] susieR_0.5.0.0347
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.19       bindr_0.1.1        compiler_3.5.1    
+ [4] pillar_1.3.0       git2r_0.23.0       plyr_1.8.4        
+ [7] workflowr_1.1.1    R.methodsS3_1.7.1  R.utils_2.7.0     
+[10] tools_3.5.1        digest_0.6.18      evaluate_0.12     
+[13] tibble_1.4.2       gtable_0.2.0       lattice_0.20-35   
+[16] pkgconfig_2.0.2    rlang_0.2.2        yaml_2.2.0        
+[19] bindrcpp_0.2.2     stringr_1.3.1      dplyr_0.7.7       
+[22] knitr_1.20         tidyselect_0.2.5   rprojroot_1.3-2   
+[25] grid_3.5.1         glue_1.3.0         R6_2.3.0          
+[28] rmarkdown_1.10     reshape2_1.4.3     purrr_0.2.5       
+[31] ggplot2_3.0.0      magrittr_1.5       whisker_0.3-2     
+[34] backports_1.1.2    scales_1.0.0       matrixStats_0.54.0
+[37] htmltools_0.3.6    assertthat_0.2.0   colorspace_1.3-2  
+[40] stringi_1.2.4      lazyeval_0.2.1     munsell_0.5.0     
+[43] crayon_1.3.4       R.oo_1.22.0       </code></pre>
+</div>
+</div>
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+<hr>
+<p>
+  This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a>
+  analysis was created with
+  <a href="https://github.com/jdblischak/workflowr">workflowr</a> 1.1.1
+</p>
+<hr>
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
