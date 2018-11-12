@@ -1,0 +1,114 @@
+---
+title: "cp-compare-new-implementation"
+author: "stephens999"
+date: "2018-10-29"
+output: workflowr::wflow_html
+---
+
+## Introduction
+
+This is just a simple check of the new `susie_trendfilter` implementation.
+
+
+```{r}
+library("susieR")
+library("genlasso")
+library("L0Learn")
+library("bcp")
+library("changepoint")
+library("ggplot2")
+library("DNAcopy")
+
+# this is naive implementation of changepoint, for comparison
+susie_cp = function(y,auto=FALSE,standardize=FALSE,...){
+  n=length(y)
+  X = matrix(0,nrow=n,ncol=n)
+  for(j in 1:n){
+    for(i in 1:j){
+      X[i,j] = (-1)
+    }
+  }
+  if(auto){
+    s = susie_auto(X,y,standardize=standardize,...)
+  } else {
+    s = susie(X,y,standardize=standardize,...)
+  }
+  return(s)
+}
+
+apply_methods = function(data){
+  # Susie
+  fit.s = susie_cp(data$x)
+  yhat.s = predict(fit.s)
+  
+  # susie_trendfilter
+  fit.stf = susie_trendfilter(data$x,0,standardize=FALSE)
+  yhat.stf = predict(fit.stf)
+  
+  return(list(fit = list(susie=fit.s,stf = fit.stf), yhat = list(susie=yhat.s,stf = yhat.stf)))
+}
+
+plot_results = function(res,data){
+  plot(data$x,col="gray")
+  lines(data$true_mean)
+  for(i in 1:length(res$yhat)){
+    lines(res$yhat[[i]],col=(i+1),type="s",lwd=2)
+  }
+}
+
+compute_error = function(res,data){
+  mse=rep(0,length(res$yhat))
+  for(i in 1:length(res$yhat)){
+    mse[i] = mean((res$yhat[[i]]-data$true_mean)^2)
+  }
+  names(mse) <- names(res$yhat)
+  mse
+}
+
+```
+
+This is a simple simulated example. The results are identical.
+```{r}
+set.seed(10)
+eg1=list()
+eg1$x=c(rnorm(100,0,1),rnorm(100,1,1),rnorm(100,0,1),rnorm(100,0.2,1)) 
+eg1$true_mean = c(rep(0,100),rep(1,100),rep(0,100),rep(0.2,100))
+eg1.res = apply_methods(eg1)
+plot_results(eg1.res,eg1)
+compute_error(eg1.res,eg1)
+```
+
+
+This is Lai et al: results identical.
+```{r}
+data(Lai2005fig4)
+lai = list(x=Lai2005fig4[,5],true_mean = rep(NA,length(Lai2005fig4[,5])))
+
+lai.res=apply_methods(lai)
+plot_results(lai.res,lai)
+```
+
+
+Simulated example from `segment`:
+```{r}
+set.seed(51)
+true_mean = rep(c(-0.2,0.1,1,-0.5,0.2,-0.5,0.1,-0.2),c(137,87,17,49,29,52,87,42))
+genomdat = list(x = rnorm(500, sd=0.2) + true_mean, true_mean=true_mean)
+
+genomdat.res = apply_methods(genomdat)
+plot_results(genomdat.res,genomdat)
+compute_error(genomdat.res,genomdat)
+```
+
+
+Compare times:
+```{r}
+system.time(susie_cp(genomdat$x))
+system.time(susie_trendfilter(genomdat$x,0,standardize=FALSE))
+
+long = rep(genomdat$x,10)
+system.time(susie_cp(long))
+system.time(susie_trendfilter(long,0,standardize=FALSE))
+```
+
+
