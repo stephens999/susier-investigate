@@ -17,3 +17,5 @@ output:
 - [Initializing with trendfiltering](cp_init_tf.html)
 
 - [An issue with the changepoint package depending on scale of data](pelt.html)
+
+- [Proposed plots to include in the paper](susie-paper.html)
