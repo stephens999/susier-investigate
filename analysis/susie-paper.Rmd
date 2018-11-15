@@ -1,0 +1,80 @@
+---
+title: "susie-paper"
+author: "stephens999"
+date: "2018-11-12"
+output: workflowr::wflow_html
+---
+
+## Introduction
+
+```{r}
+library("susieR")
+library("DNAcopy")
+library("changepoint")
+```
+
+
+## Simulated example from DNAcopy
+
+This is the simulated example from `?DNAcopy::segment` (note we changed
+this into a single problem (single chromosome) whereas the example was originally split into two chromosomes).
+```{r}
+set.seed(51)
+genomdat <- rnorm(500, sd=0.2) +
+rep(c(-0.2,0.1,1,-0.5,0.2,-0.5,0.1,-0.2),c(137,87,17,49,29,52,87,42))
+chrom <- rep(1,500)
+maploc <- c(1:500)
+test2 <- DNAcopy::segment(CNA(genomdat, chrom, maploc))
+plot(test2)
+```
+
+```{r "susie-change-point-example"}
+genomdat.s = susieR::susie_trendfilter(genomdat,0)
+plot_cs = function(s){
+  CS = s$sets$cs
+  for(i in 1:length(CS)){
+    rect(min(CS[[i]]),-5,max(CS[[i]])+1,5,col = rgb(1,0,0,alpha=0.5),border=NA)
+  }
+}
+
+plot(genomdat,col="gray",ylab="y",xlab="t")
+segments(x0=test2$output$loc.start,x1=test2$output$loc.end,y0=test2$output$seg.mean,col="blue",lwd=2)
+abline(v=cumsum(c(137,87,17,49,29,52,87))) # changepoint locations
+plot_cs(genomdat.s)
+```
+
+
+Report CSs and compare with true locations
+```{r}
+genomdat.s$sets$cs
+cumsum(c(137,87,17,49,29,52,87))
+```
+
+## Convergence issue
+
+We set up a simple simulated example with two change points very close together.
+```{r}
+set.seed(1)
+x = rnorm(100)
+x[50:51]=x[50:51]+8
+x.s = susie_trendfilter(x,0,L=2,estimate_prior_variance=TRUE)
+plot(x,col="gray",ylab="y",xlab="t")
+lines(predict(x.s),type="s")
+susie_get_objective(x.s)
+```
+
+Now try initializing susie at the "truth"
+```{r}
+s0 = susie_init_coef(c(49,51),coef_value = c(8,-8),p=100)
+x.s2 = susie_trendfilter(x,0,s_init=s0,estimate_prior_variance=TRUE)
+plot(x,col="gray",ylab="y",xlab="t")
+lines(predict(x.s2),col=2,type="s")
+susie_get_objective(x.s2)
+```
+
+```{r "susie-converge-problem"}
+plot(x,col="gray",ylab="y",xlab="t")
+lines(predict(x.s),type="s")
+lines(predict(x.s2),col=2,type="s")
+```
+
