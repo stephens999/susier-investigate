@@ -1,0 +1,62 @@
+---
+title: "l0learn_challenge"
+author: "stephens999"
+date: "2018-12-08"
+output: workflowr::wflow_html
+---
+
+## Introduction
+
+The aim here is to illustrate L0learn's performance on a challenging example that we also use to challenge susie.
+```{r}
+library("L0Learn")
+library("genlasso")
+```
+
+Here we simulate some data with two changepoints, very close together.
+(Note: a more challenging example still might make these even closer together?)
+```{r}
+set.seed(1)
+x = rnorm(100)
+x[50:51]=x[50:51]+8
+plot(x, col="gray")
+```
+
+Now we set up the design matrix $X$ to use a "step function" basis.
+```{r}
+n = length(x)
+X = matrix(0,nrow=n,ncol=n-1)
+for(j in 1:(n-1)){
+  for(i in (j+1):n){
+    X[i,j] = 1
+  }
+}
+```
+
+Now try L0Learn with L0 penalty. (Note: The CS algorithm is the faster
+and less accurate one.)
+```{r}
+y.l0.CS = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.01,0.001,length=100)),algorithm="CS") 
+
+
+y.l0.CDPSI = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.0076,0.0075,length=1000)),algorithm="CDPSI") 
+
+plot(x,main="green=CDPSI; red=CS")
+lines(predict(y.l0.CS,newx=X,lambda=y.l0.CS$lambda[[1]][min(which(y.l0.CS$suppSize[[1]]>1))]),col=2)
+lines(predict(y.l0.CDPSI,newx=X,lambda=y.l0.CDPSI$lambda[[1]][min(which(y.l0.CDPSI$suppSize[[1]]>1))]),col=3)
+
+```
+
+
+```{r}
+head(y.l0.CS$suppSize[[1]])
+head(y.l0.CDPSI$suppSize[[1]])
+```
+
+Note that the more sophisticated CSPSI algorithm does not
+find the correct solution here because it does not give 2 changepoints -
+all solutions have at least 4 changepoints. I guess it
+might be possible to solve this by playing with the penalty?
+
+
+
