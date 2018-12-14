@@ -13,6 +13,8 @@ library("L0Learn")
 library("genlasso")
 ```
 
+## Simple changepoint example
+
 Here we simulate some data with two changepoints, very close together.
 (Note: a more challenging example still might make these even closer together?)
 ```{r}
@@ -33,23 +35,23 @@ for(j in 1:(n-1)){
 }
 ```
 
-Now try L0Learn with L0 penalty. (Note: The CS algorithm is the faster
+Now try L0Learn with L0 penalty. (Note: The CD algorithm is the faster
 and less accurate one.)
 ```{r}
-y.l0.CS = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.01,0.001,length=100)),algorithm="CS") 
+y.l0.CD = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.01,0.001,length=100)),algorithm="CD") 
 
 
 y.l0.CDPSI = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.0076,0.0075,length=1000)),algorithm="CDPSI") 
 
-plot(x,main="green=CDPSI; red=CS")
-lines(predict(y.l0.CS,newx=X,lambda=y.l0.CS$lambda[[1]][min(which(y.l0.CS$suppSize[[1]]>1))]),col=2)
+plot(x,main="green=CDPSI; red=CD")
+lines(predict(y.l0.CD,newx=X,lambda=y.l0.CD$lambda[[1]][min(which(y.l0.CD$suppSize[[1]]>1))]),col=2)
 lines(predict(y.l0.CDPSI,newx=X,lambda=y.l0.CDPSI$lambda[[1]][min(which(y.l0.CDPSI$suppSize[[1]]>1))]),col=3)
 
 ```
 
 
 ```{r}
-head(y.l0.CS$suppSize[[1]])
+head(y.l0.CD$suppSize[[1]])
 head(y.l0.CDPSI$suppSize[[1]])
 ```
 
@@ -59,4 +61,38 @@ all solutions have at least 4 changepoints. I guess it
 might be possible to solve this by playing with the penalty?
 
 
+Indeed, Rahul Mazumder sent me this code, which indeed recovers the solution with both algorithms:
+```{r}
+y.l0.CD = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.001,1,length=100)),
+                      algorithm="CD") 
 
+y.l0.CDPSI = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.001,1,length=100)),algorithm="CDPSI") 
+
+plot(x,main="green=CDPSI; red=CD")
+lines(predict(y.l0.CD, newx=X, lambda=y.l0.CD$lambda[[1]][50]),col=2) # 
+lines(predict(y.l0.CDPSI, newx=X, lambda=y.l0.CDPSI$lambda[[1]][50]),col=3) 
+```
+
+I found it interesting that this did not work when I reversed the lambda. I guess this is maybe analogous to the difference between "backwards" vs "forwards" selection?
+```{r}
+y.l0.CD = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(1,0.001,length=100)),
+                      algorithm="CD") 
+
+y.l0.CDPSI = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(1,0.001,length=100)),algorithm="CDPSI") 
+
+plot(x,main="green=CDPSI; red=CD")
+lines(predict(y.l0.CD, newx=X, lambda=y.l0.CD$lambda[[1]][50]),col=2) # recovers the soln
+
+lines(predict(y.l0.CDPSI, newx=X, lambda=y.l0.CDPSI$lambda[[1]][50]),col=3) #recovers the soln
+```
+
+Interestingly(?) the CDPSI does actually recover the correct solution at a different lamdba:
+```{r }
+y.l0.CDPSI$suppSize[[1]]
+y.l0.CDPSI$suppSize[[1]]
+
+plot(x,main="green=CDPSI; red=CD")
+lines(predict(y.l0.CD, newx=X, lambda=y.l0.CD$lambda[[1]][99]),col=2) # recovers the soln
+
+lines(predict(y.l0.CDPSI, newx=X, lambda=y.l0.CDPSI$lambda[[1]][99]),col=3) #recovers the soln
+```
