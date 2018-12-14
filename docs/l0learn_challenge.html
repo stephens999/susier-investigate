@@ -347,7 +347,7 @@ div.section {
 </details>
 </li>
 <li>
-<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/stephens999/susier-investigate/tree/ba9148039dfa0d7e1e7fda6a653aade39e6c7ca7" target="_blank">ba91480</a> </summary></p>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/stephens999/susier-investigate/tree/22c8857ff45bc7fb7a9f12f29cf6733d3ef7f337" target="_blank">22c8857</a> </summary></p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 <pre><code>
 Ignored files:
@@ -404,6 +404,40 @@ Message
 Rmd
 </td>
 <td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/22c8857ff45bc7fb7a9f12f29cf6733d3ef7f337/analysis/l0learn_challenge.Rmd" target="_blank">22c8857</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-12-14
+</td>
+<td style="text-align:left;">
+workflowr::wflow_publish(“analysis/l0learn_challenge.Rmd”)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+html
+</td>
+<td style="text-align:left;">
+<a href="https://cdn.rawgit.com/stephens999/susier-investigate/89815920e854578c571d6ebac2ef27395e84c3e5/docs/l0learn_challenge.html" target="_blank">8981592</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-12-14
+</td>
+<td style="text-align:left;">
+Build site.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
 <a href="https://github.com/stephens999/susier-investigate/blob/ba9148039dfa0d7e1e7fda6a653aade39e6c7ca7/analysis/l0learn_challenge.Rmd" target="_blank">ba91480</a>
 </td>
 <td style="text-align:left;">
@@ -455,8 +489,8 @@ workflowr::wflow_publish(“analysis/l0learn_challenge.Rmd”)
 </ul>
 <p></details></p>
 <hr />
-<div id="introduction" class="section level2">
-<h2>Introduction</h2>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
 <p>The aim here is to illustrate L0learn’s performance on a challenging example that we also use to challenge susie.</p>
 <pre class="r"><code>library(&quot;L0Learn&quot;)
 library(&quot;genlasso&quot;)</code></pre>
@@ -470,14 +504,17 @@ Attaching package: &#39;igraph&#39;</code></pre>
 <pre><code>The following object is masked from &#39;package:base&#39;:
 
     union</code></pre>
+<pre class="r"><code>library(&quot;glmnet&quot;)</code></pre>
+<pre><code>Loading required package: foreach</code></pre>
+<pre><code>Loaded glmnet 2.0-16</code></pre>
 </div>
-<div id="simple-changepoint-example" class="section level2">
-<h2>Simple changepoint example</h2>
+<div id="simple-changepoint-example" class="section level1">
+<h1>Simple changepoint example</h1>
 <p>Here we simulate some data with two changepoints, very close together. (Note: a more challenging example still might make these even closer together?)</p>
 <pre class="r"><code>set.seed(1)
-x = rnorm(100)
-x[50:51]=x[50:51]+8
-plot(x, col=&quot;gray&quot;)</code></pre>
+y = rnorm(100)
+y[50:51]=y[50:51]+8
+plot(y, col=&quot;gray&quot;)</code></pre>
 <p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of unnamed-chunk-2-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -510,20 +547,22 @@ stephens999
 </table>
 <p></details></p>
 <p>Now we set up the design matrix <span class="math inline">\(X\)</span> to use a “step function” basis.</p>
-<pre class="r"><code>n = length(x)
+<pre class="r"><code>n = length(y)
 X = matrix(0,nrow=n,ncol=n-1)
 for(j in 1:(n-1)){
   for(i in (j+1):n){
     X[i,j] = 1
   }
 }</code></pre>
+<div id="l0learn" class="section level2">
+<h2>L0Learn</h2>
 <p>Now try L0Learn with L0 penalty. (Note: The CD algorithm is the faster and less accurate one.)</p>
-<pre class="r"><code>y.l0.CD = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.01,0.001,length=100)),algorithm=&quot;CD&quot;) 
+<pre class="r"><code>y.l0.CD = L0Learn.fit(X,y,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.01,0.001,length=100)),algorithm=&quot;CD&quot;) 
 
 
-y.l0.CDPSI = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.0076,0.0075,length=1000)),algorithm=&quot;CDPSI&quot;) 
+y.l0.CDPSI = L0Learn.fit(X,y,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.0076,0.0075,length=1000)),algorithm=&quot;CDPSI&quot;) 
 
-plot(x,main=&quot;green=CDPSI; red=CD&quot;)
+plot(y,main=&quot;green=CDPSI; red=CD&quot;)
 lines(predict(y.l0.CD,newx=X,lambda=y.l0.CD$lambda[[1]][min(which(y.l0.CD$suppSize[[1]]&gt;1))]),col=2)
 lines(predict(y.l0.CDPSI,newx=X,lambda=y.l0.CDPSI$lambda[[1]][min(which(y.l0.CDPSI$suppSize[[1]]&gt;1))]),col=3)</code></pre>
 <p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
@@ -545,6 +584,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/89815920e854578c571d6ebac2ef27395e84c3e5/docs/figure/l0learn_challenge.Rmd/unnamed-chunk-4-1.png" target="_blank">8981592</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-12-14
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 <a href="https://github.com/stephens999/susier-investigate/blob/4e79e79beff14fa92fc3d377c060fe275a4a0a5d/docs/figure/l0learn_challenge.Rmd/unnamed-chunk-4-1.png" target="_blank">4e79e79</a>
 </td>
 <td style="text-align:left;">
@@ -563,26 +613,86 @@ stephens999
 <pre><code>[1] 4 4 4 4 4 4</code></pre>
 <p>Note that the more sophisticated CSPSI algorithm does not find the correct solution here because it does not give 2 changepoints - all solutions have at least 4 changepoints. I guess it might be possible to solve this by playing with the penalty?</p>
 <p>Indeed, Rahul Mazumder sent me this code, which indeed recovers the solution with both algorithms:</p>
-<pre class="r"><code>y.l0.CD = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.001,1,length=100)),
+<pre class="r"><code>y.l0.CD = L0Learn.fit(X,y,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.001,1,length=100)),
                       algorithm=&quot;CD&quot;) 
 
-y.l0.CDPSI = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.001,1,length=100)),algorithm=&quot;CDPSI&quot;) 
+y.l0.CDPSI = L0Learn.fit(X,y,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.001,1,length=100)),algorithm=&quot;CDPSI&quot;) 
 
-plot(x,main=&quot;green=CDPSI; red=CD&quot;)
+plot(y,main=&quot;green=CDPSI; red=CD&quot;)
 lines(predict(y.l0.CD, newx=X, lambda=y.l0.CD$lambda[[1]][50]),col=2) # 
 lines(predict(y.l0.CDPSI, newx=X, lambda=y.l0.CDPSI$lambda[[1]][50]),col=3) </code></pre>
 <p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-6-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/89815920e854578c571d6ebac2ef27395e84c3e5/docs/figure/l0learn_challenge.Rmd/unnamed-chunk-6-1.png" target="_blank">8981592</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-12-14
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <p>I found it interesting that this did not work when I reversed the lambda. I guess this is maybe analogous to the difference between “backwards” vs “forwards” selection?</p>
-<pre class="r"><code>y.l0.CD = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(1,0.001,length=100)),
+<pre class="r"><code>y.l0.CD = L0Learn.fit(X,y,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(1,0.001,length=100)),
                       algorithm=&quot;CD&quot;) 
 
-y.l0.CDPSI = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(1,0.001,length=100)),algorithm=&quot;CDPSI&quot;) 
+y.l0.CDPSI = L0Learn.fit(X,y,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(1,0.001,length=100)),algorithm=&quot;CDPSI&quot;) 
 
-plot(x,main=&quot;green=CDPSI; red=CD&quot;)
+plot(y,main=&quot;green=CDPSI; red=CD&quot;)
 lines(predict(y.l0.CD, newx=X, lambda=y.l0.CD$lambda[[1]][50]),col=2) # recovers the soln
 
 lines(predict(y.l0.CDPSI, newx=X, lambda=y.l0.CDPSI$lambda[[1]][50]),col=3) #recovers the soln</code></pre>
 <p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-7-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/89815920e854578c571d6ebac2ef27395e84c3e5/docs/figure/l0learn_challenge.Rmd/unnamed-chunk-7-1.png" target="_blank">8981592</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-12-14
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <p>Interestingly(?) the CDPSI does actually recover the correct solution at a different lamdba:</p>
 <pre class="r"><code>y.l0.CDPSI$suppSize[[1]]</code></pre>
 <pre><code>  [1]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
@@ -590,18 +700,147 @@ lines(predict(y.l0.CDPSI, newx=X, lambda=y.l0.CDPSI$lambda[[1]][50]),col=3) #rec
  [47]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
  [70]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
  [93]  0  0  0  0  0  0  2 20</code></pre>
-<pre class="r"><code>y.l0.CDPSI$suppSize[[1]]</code></pre>
-<pre><code>  [1]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
- [24]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
- [47]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
- [70]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
- [93]  0  0  0  0  0  0  2 20</code></pre>
-<pre class="r"><code>plot(x,main=&quot;green=CDPSI; red=CD&quot;)
+<pre class="r"><code>plot(y,main=&quot;green=CDPSI; red=CD&quot;)
 lines(predict(y.l0.CD, newx=X, lambda=y.l0.CD$lambda[[1]][99]),col=2) # recovers the soln
 
 lines(predict(y.l0.CDPSI, newx=X, lambda=y.l0.CDPSI$lambda[[1]][99]),col=3) #recovers the soln</code></pre>
 <p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-8-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/89815920e854578c571d6ebac2ef27395e84c3e5/docs/figure/l0learn_challenge.Rmd/unnamed-chunk-8-1.png" target="_blank">8981592</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-12-14
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 </div>
+<div id="lasso" class="section level2">
+<h2>Lasso</h2>
+<p>For comparison we can look at the lasso solution. The L1 penalty has the advantage of being convex, but the disadvantage that it either over-selects or under-shrinks.</p>
+<pre class="r"><code>y.glmnet.0 = glmnet(X,y)
+suppsize = apply(y.glmnet.0$beta,2,function(x){sum(abs(x)&gt;0)})
+suppsize</code></pre>
+<pre><code> s0  s1  s2  s3  s4  s5  s6  s7  s8  s9 s10 s11 s12 s13 s14 s15 s16 s17 
+  0   1   1   2   7   7   7   7   7   8   9  10  10  11  12  13  13  14 
+s18 s19 s20 s21 s22 s23 s24 s25 s26 s27 s28 s29 s30 s31 s32 s33 s34 s35 
+ 17  18  19  21  21  22  26  30  36  38  44  47  50  51  52  55  61  63 
+s36 s37 s38 s39 s40 s41 s42 s43 s44 s45 s46 s47 s48 s49 s50 s51 s52 s53 
+ 65  66  68  71  72  73  76  79  79  83  84  86  86  87  87  88  88  90 
+s54 s55 s56 s57 s58 s59 s60 s61 s62 s63 s64 
+ 92  93  93  93  93  93  93  95  96  96  96 </code></pre>
+<pre class="r"><code>plot(y, main=&quot;lasso solution with 2 changepoints&quot;)
+lines(predict(y.glmnet.0, newx=X, s=y.glmnet.0$lambda[4]),col=3)</code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(y, main=&quot;lasso solution with 19 changepoints&quot;)
+lines(predict(y.glmnet.0, newx=X, s=y.glmnet.0$lambda[20]),col=3)</code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-9-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(y, main=&quot;lasso solution with 50 changepoints&quot;)
+lines(predict(y.glmnet.0, newx=X, s=y.glmnet.0$lambda[30]),col=3)</code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-9-3.png" width="672" style="display: block; margin: auto;" /></p>
+<p>For completeness also include trendfilter from genlasso (should be solving same problem as glmnet above)</p>
+<pre class="r"><code>y.tf0 = trendfilter(y,ord=0)
+y.tf0.cv = cv.trendfilter(y.tf0)</code></pre>
+<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
+<pre class="r"><code>opt = which(y.tf0$lambda==y.tf0.cv$lambda.min) #optimal value of lambda
+yhat= y.tf0$fit[,opt]
+plot(y)
+lines(yhat,col=2)</code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="a-more-challenging-example-the-wrong-basis" class="section level1">
+<h1>A more challenging example: the wrong basis</h1>
+<p>The example is designed to be more challenging (it is also more contrived). We use the same simulated data, but with basis functions that are linear instead of steps (basically we apply “order 2 trendfiltering” to order 1 data). The true solution in this basis is sparse with 4 elements: each changepoint needs two very carefully-balanced coefficients to capture it, which makes this harder than before.</p>
+<p>First create the linear basis:</p>
+<pre class="r"><code>X1 = apply(X,2,cumsum) 
+plot(X1[,1])</code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(X1[,50])</code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-11-2.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Just to demonstrate that the true mean is represented sparsely in this basis:</p>
+<pre class="r"><code>b = rep(0,99)
+b[49] = 8
+b[50] = -8
+b[51] = -8
+b[52] = 8
+plot(y)
+lines(X1 %*% t(t(b)))</code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-12-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Now lasso using glmnet. We note it has convergence problems…</p>
+<pre class="r"><code>y.glmnet.1 = glmnet(X1,y)</code></pre>
+<pre><code>Warning: from glmnet Fortran code (error code -53); Convergence for 53th
+lambda value not reached after maxit=100000 iterations; solutions for
+larger lambdas returned</code></pre>
+<pre class="r"><code>suppsize = apply(y.glmnet.1$beta,2,function(x){sum(abs(x)&gt;0)})
+suppsize</code></pre>
+<pre><code> s0  s1  s2  s3  s4  s5  s6  s7  s8  s9 s10 s11 s12 s13 s14 s15 s16 s17 
+  0   1   1   1   1   1   1   1   2   2   2   2   2   2   3   3   4   5 
+s18 s19 s20 s21 s22 s23 s24 s25 s26 s27 s28 s29 s30 s31 s32 s33 s34 s35 
+  7   8   9   7   7   7   8   9   8   8   7   6   6  12  14  12  17  20 
+s36 s37 s38 s39 s40 s41 s42 s43 s44 s45 s46 s47 s48 s49 s50 s51 
+ 16  16  17  19  15  15  15  17  22  21  20  23  24  26  24  24 </code></pre>
+<pre class="r"><code>plot(y, main=&quot;lasso solution with support 4&quot;)
+lines(predict(y.glmnet.1, newx=X1, s=y.glmnet.0$lambda[16]),col=3)</code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(y, main=&quot;lasso solution with support 6&quot;)
+lines(predict(y.glmnet.1, newx=X1, s=y.glmnet.0$lambda[30]),col=3)</code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-13-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(y, main=&quot;lasso solution with support 24&quot;)
+lines(predict(y.glmnet.1, newx=X1, s=y.glmnet.0$lambda[51]),col=3)</code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-13-3.png" width="672" style="display: block; margin: auto;" /></p>
+<p>The genlasso algorithm is better suited to this example:</p>
+<pre class="r"><code>y.tf1 = trendfilter(y,ord=1)
+y.tf1.cv = cv.trendfilter(y.tf1)</code></pre>
+<pre><code>Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ... </code></pre>
+<pre class="r"><code>opt = which(y.tf1$lambda==y.tf1.cv$lambda.min) #optimal value of lambda
+yhat= y.tf1$fit[,opt]
+plot(y)
+lines(yhat,col=2)</code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Try L0Learn with this new basis (X1):</p>
+<pre class="r"><code>y.l0.CD.1 = L0Learn.fit(X1,y,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.0001,.1,length=100)),
+                      algorithm=&quot;CD&quot;) 
+
+y.l0.CDPSI.1 = L0Learn.fit(X1,y,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.0001,.1,length=100)),algorithm=&quot;CDPSI&quot;) 
+
+y.l0.CDPSI.1$suppSize[[1]]</code></pre>
+<pre><code>  [1] 10  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8
+ [24]  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8
+ [47]  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  8  5  5
+ [70]  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5  5
+ [93]  5  5  5  5  5  5  5  5</code></pre>
+<pre class="r"><code>y.l0.CD.1$suppSize[[1]]</code></pre>
+<pre><code>  [1] 10  8  8  8  8  8  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7
+ [24]  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7
+ [47]  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  7  4  4
+ [70]  4  4  4  4  4  4  4  4  4  4  4  4  4  4  4  4  4  4  4  4  4  4  4
+ [93]  4  4  4  4  4  4  4  3</code></pre>
+<pre class="r"><code>plot(y,main=&quot;green=CDPSI; red=CD&quot;)
+lines(predict(y.l0.CD.1, newx=X1, lambda=y.l0.CD.1$lambda[[1]][50]),col=2) # 
+lines(predict(y.l0.CDPSI.1, newx=X1, lambda=y.l0.CDPSI.1$lambda[[1]][50]),col=3) </code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" /></p>
 <div id="session-information" class="section level2">
 <h2>Session information</h2>
 <pre class="r"><code>sessionInfo()</code></pre>
@@ -620,24 +859,26 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] genlasso_1.4  igraph_1.2.2  Matrix_1.2-14 L0Learn_1.0.7
+[1] glmnet_2.0-16 foreach_1.4.4 genlasso_1.4  igraph_1.2.2  Matrix_1.2-14
+[6] L0Learn_1.0.7
 
 loaded via a namespace (and not attached):
  [1] Rcpp_1.0.0        compiler_3.5.1    pillar_1.3.0     
  [4] git2r_0.23.0      plyr_1.8.4        workflowr_1.1.1  
- [7] bindr_0.1.1       R.methodsS3_1.7.1 R.utils_2.7.0    
-[10] tools_3.5.1       digest_0.6.18     evaluate_0.12    
-[13] tibble_1.4.2      gtable_0.2.0      lattice_0.20-35  
-[16] pkgconfig_2.0.2   rlang_0.2.2       yaml_2.2.0       
-[19] bindrcpp_0.2.2    stringr_1.3.1     dplyr_0.7.7      
-[22] knitr_1.20        tidyselect_0.2.5  rprojroot_1.3-2  
-[25] grid_3.5.1        glue_1.3.0        R6_2.3.0         
-[28] rmarkdown_1.10    reshape2_1.4.3    purrr_0.2.5      
-[31] ggplot2_3.0.0     magrittr_1.5      whisker_0.3-2    
-[34] backports_1.1.2   scales_1.0.0      htmltools_0.3.6  
-[37] assertthat_0.2.0  colorspace_1.3-2  stringi_1.2.4    
-[40] lazyeval_0.2.1    munsell_0.5.0     crayon_1.3.4     
-[43] R.oo_1.22.0      </code></pre>
+ [7] bindr_0.1.1       iterators_1.0.10  R.methodsS3_1.7.1
+[10] R.utils_2.7.0     tools_3.5.1       digest_0.6.18    
+[13] evaluate_0.12     tibble_1.4.2      gtable_0.2.0     
+[16] lattice_0.20-35   pkgconfig_2.0.2   rlang_0.2.2      
+[19] yaml_2.2.0        bindrcpp_0.2.2    stringr_1.3.1    
+[22] dplyr_0.7.7       knitr_1.20        tidyselect_0.2.5 
+[25] rprojroot_1.3-2   grid_3.5.1        glue_1.3.0       
+[28] R6_2.3.0          rmarkdown_1.10    reshape2_1.4.3   
+[31] purrr_0.2.5       ggplot2_3.0.0     magrittr_1.5     
+[34] whisker_0.3-2     codetools_0.2-15  backports_1.1.2  
+[37] scales_1.0.0      htmltools_0.3.6   assertthat_0.2.0 
+[40] colorspace_1.3-2  stringi_1.2.4     lazyeval_0.2.1   
+[43] munsell_0.5.0     crayon_1.3.4      R.oo_1.22.0      </code></pre>
+</div>
 </div>
 
 <!-- Adjust MathJax settings so that all math formulae are shown using
