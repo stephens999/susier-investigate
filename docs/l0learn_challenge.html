@@ -323,7 +323,7 @@ div.section {
 </div>
 
 
-<p><strong>Last updated:</strong> 2018-12-08</p>
+<p><strong>Last updated:</strong> 2018-12-14</p>
 <strong>workflowr checks:</strong> <small>(Click a bullet for more information)</small>
 <ul>
 <li>
@@ -347,7 +347,7 @@ div.section {
 </details>
 </li>
 <li>
-<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/stephens999/susier-investigate/tree/0be0d0d2f669adf23c1b5577a04f758fe5aa45f9" target="_blank">0be0d0d</a> </summary></p>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/stephens999/susier-investigate/tree/ba9148039dfa0d7e1e7fda6a653aade39e6c7ca7" target="_blank">ba91480</a> </summary></p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 <pre><code>
 Ignored files:
@@ -404,6 +404,40 @@ Message
 Rmd
 </td>
 <td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/ba9148039dfa0d7e1e7fda6a653aade39e6c7ca7/analysis/l0learn_challenge.Rmd" target="_blank">ba91480</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-12-14
+</td>
+<td style="text-align:left;">
+workflowr::wflow_publish(“analysis/l0learn_challenge.Rmd”)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+html
+</td>
+<td style="text-align:left;">
+<a href="https://cdn.rawgit.com/stephens999/susier-investigate/4e79e79beff14fa92fc3d377c060fe275a4a0a5d/docs/l0learn_challenge.html" target="_blank">4e79e79</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-12-08
+</td>
+<td style="text-align:left;">
+Build site.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
 <a href="https://github.com/stephens999/susier-investigate/blob/0be0d0d2f669adf23c1b5577a04f758fe5aa45f9/analysis/l0learn_challenge.Rmd" target="_blank">0be0d0d</a>
 </td>
 <td style="text-align:left;">
@@ -436,12 +470,45 @@ Attaching package: &#39;igraph&#39;</code></pre>
 <pre><code>The following object is masked from &#39;package:base&#39;:
 
     union</code></pre>
+</div>
+<div id="simple-changepoint-example" class="section level2">
+<h2>Simple changepoint example</h2>
 <p>Here we simulate some data with two changepoints, very close together. (Note: a more challenging example still might make these even closer together?)</p>
 <pre class="r"><code>set.seed(1)
 x = rnorm(100)
 x[50:51]=x[50:51]+8
 plot(x, col=&quot;gray&quot;)</code></pre>
 <p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-2-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/4e79e79beff14fa92fc3d377c060fe275a4a0a5d/docs/figure/l0learn_challenge.Rmd/unnamed-chunk-2-1.png" target="_blank">4e79e79</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-12-08
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <p>Now we set up the design matrix <span class="math inline">\(X\)</span> to use a “step function” basis.</p>
 <pre class="r"><code>n = length(x)
 X = matrix(0,nrow=n,ncol=n-1)
@@ -450,21 +517,90 @@ for(j in 1:(n-1)){
     X[i,j] = 1
   }
 }</code></pre>
-<p>Now try L0Learn with L0 penalty. (Note: The CS algorithm is the faster and less accurate one.)</p>
-<pre class="r"><code>y.l0.CS = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.01,0.001,length=100)),algorithm=&quot;CS&quot;) 
+<p>Now try L0Learn with L0 penalty. (Note: The CD algorithm is the faster and less accurate one.)</p>
+<pre class="r"><code>y.l0.CD = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.01,0.001,length=100)),algorithm=&quot;CD&quot;) 
 
 
 y.l0.CDPSI = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.0076,0.0075,length=1000)),algorithm=&quot;CDPSI&quot;) 
 
-plot(x,main=&quot;green=CDPSI; red=CS&quot;)
-lines(predict(y.l0.CS,newx=X,lambda=y.l0.CS$lambda[[1]][min(which(y.l0.CS$suppSize[[1]]&gt;1))]),col=2)
+plot(x,main=&quot;green=CDPSI; red=CD&quot;)
+lines(predict(y.l0.CD,newx=X,lambda=y.l0.CD$lambda[[1]][min(which(y.l0.CD$suppSize[[1]]&gt;1))]),col=2)
 lines(predict(y.l0.CDPSI,newx=X,lambda=y.l0.CDPSI$lambda[[1]][min(which(y.l0.CDPSI$suppSize[[1]]&gt;1))]),col=3)</code></pre>
 <p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>head(y.l0.CS$suppSize[[1]])</code></pre>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-4-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<a href="https://github.com/stephens999/susier-investigate/blob/4e79e79beff14fa92fc3d377c060fe275a4a0a5d/docs/figure/l0learn_challenge.Rmd/unnamed-chunk-4-1.png" target="_blank">4e79e79</a>
+</td>
+<td style="text-align:left;">
+stephens999
+</td>
+<td style="text-align:left;">
+2018-12-08
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
+<pre class="r"><code>head(y.l0.CD$suppSize[[1]])</code></pre>
 <pre><code>[1] 2 2 2 2 2 2</code></pre>
 <pre class="r"><code>head(y.l0.CDPSI$suppSize[[1]])</code></pre>
 <pre><code>[1] 4 4 4 4 4 4</code></pre>
 <p>Note that the more sophisticated CSPSI algorithm does not find the correct solution here because it does not give 2 changepoints - all solutions have at least 4 changepoints. I guess it might be possible to solve this by playing with the penalty?</p>
+<p>Indeed, Rahul Mazumder sent me this code, which indeed recovers the solution with both algorithms:</p>
+<pre class="r"><code>y.l0.CD = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.001,1,length=100)),
+                      algorithm=&quot;CD&quot;) 
+
+y.l0.CDPSI = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.001,1,length=100)),algorithm=&quot;CDPSI&quot;) 
+
+plot(x,main=&quot;green=CDPSI; red=CD&quot;)
+lines(predict(y.l0.CD, newx=X, lambda=y.l0.CD$lambda[[1]][50]),col=2) # 
+lines(predict(y.l0.CDPSI, newx=X, lambda=y.l0.CDPSI$lambda[[1]][50]),col=3) </code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>I found it interesting that this did not work when I reversed the lambda. I guess this is maybe analogous to the difference between “backwards” vs “forwards” selection?</p>
+<pre class="r"><code>y.l0.CD = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(1,0.001,length=100)),
+                      algorithm=&quot;CD&quot;) 
+
+y.l0.CDPSI = L0Learn.fit(X,x,penalty=&quot;L0&quot;,maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(1,0.001,length=100)),algorithm=&quot;CDPSI&quot;) 
+
+plot(x,main=&quot;green=CDPSI; red=CD&quot;)
+lines(predict(y.l0.CD, newx=X, lambda=y.l0.CD$lambda[[1]][50]),col=2) # recovers the soln
+
+lines(predict(y.l0.CDPSI, newx=X, lambda=y.l0.CDPSI$lambda[[1]][50]),col=3) #recovers the soln</code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Interestingly(?) the CDPSI does actually recover the correct solution at a different lamdba:</p>
+<pre class="r"><code>y.l0.CDPSI$suppSize[[1]]</code></pre>
+<pre><code>  [1]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ [24]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ [47]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ [70]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ [93]  0  0  0  0  0  0  2 20</code></pre>
+<pre class="r"><code>y.l0.CDPSI$suppSize[[1]]</code></pre>
+<pre><code>  [1]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ [24]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ [47]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ [70]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ [93]  0  0  0  0  0  0  2 20</code></pre>
+<pre class="r"><code>plot(x,main=&quot;green=CDPSI; red=CD&quot;)
+lines(predict(y.l0.CD, newx=X, lambda=y.l0.CD$lambda[[1]][99]),col=2) # recovers the soln
+
+lines(predict(y.l0.CDPSI, newx=X, lambda=y.l0.CDPSI$lambda[[1]][99]),col=3) #recovers the soln</code></pre>
+<p><img src="figure/l0learn_challenge.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="session-information" class="section level2">
 <h2>Session information</h2>
