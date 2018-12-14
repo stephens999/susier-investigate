@@ -5,28 +5,29 @@ date: "2018-12-08"
 output: workflowr::wflow_html
 ---
 
-## Introduction
+# Introduction
 
 The aim here is to illustrate L0learn's performance on a challenging example that we also use to challenge susie.
 ```{r}
 library("L0Learn")
 library("genlasso")
+library("glmnet")
 ```
 
-## Simple changepoint example
+# Simple changepoint example
 
 Here we simulate some data with two changepoints, very close together.
 (Note: a more challenging example still might make these even closer together?)
 ```{r}
 set.seed(1)
-x = rnorm(100)
-x[50:51]=x[50:51]+8
-plot(x, col="gray")
+y = rnorm(100)
+y[50:51]=y[50:51]+8
+plot(y, col="gray")
 ```
 
 Now we set up the design matrix $X$ to use a "step function" basis.
 ```{r}
-n = length(x)
+n = length(y)
 X = matrix(0,nrow=n,ncol=n-1)
 for(j in 1:(n-1)){
   for(i in (j+1):n){
@@ -35,15 +36,17 @@ for(j in 1:(n-1)){
 }
 ```
 
+## L0Learn
+
 Now try L0Learn with L0 penalty. (Note: The CD algorithm is the faster
 and less accurate one.)
 ```{r}
-y.l0.CD = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.01,0.001,length=100)),algorithm="CD") 
+y.l0.CD = L0Learn.fit(X,y,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.01,0.001,length=100)),algorithm="CD") 
 
 
-y.l0.CDPSI = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.0076,0.0075,length=1000)),algorithm="CDPSI") 
+y.l0.CDPSI = L0Learn.fit(X,y,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.0076,0.0075,length=1000)),algorithm="CDPSI") 
 
-plot(x,main="green=CDPSI; red=CD")
+plot(y,main="green=CDPSI; red=CD")
 lines(predict(y.l0.CD,newx=X,lambda=y.l0.CD$lambda[[1]][min(which(y.l0.CD$suppSize[[1]]>1))]),col=2)
 lines(predict(y.l0.CDPSI,newx=X,lambda=y.l0.CDPSI$lambda[[1]][min(which(y.l0.CDPSI$suppSize[[1]]>1))]),col=3)
 
@@ -63,24 +66,24 @@ might be possible to solve this by playing with the penalty?
 
 Indeed, Rahul Mazumder sent me this code, which indeed recovers the solution with both algorithms:
 ```{r}
-y.l0.CD = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.001,1,length=100)),
+y.l0.CD = L0Learn.fit(X,y,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.001,1,length=100)),
                       algorithm="CD") 
 
-y.l0.CDPSI = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.001,1,length=100)),algorithm="CDPSI") 
+y.l0.CDPSI = L0Learn.fit(X,y,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.001,1,length=100)),algorithm="CDPSI") 
 
-plot(x,main="green=CDPSI; red=CD")
+plot(y,main="green=CDPSI; red=CD")
 lines(predict(y.l0.CD, newx=X, lambda=y.l0.CD$lambda[[1]][50]),col=2) # 
 lines(predict(y.l0.CDPSI, newx=X, lambda=y.l0.CDPSI$lambda[[1]][50]),col=3) 
 ```
 
 I found it interesting that this did not work when I reversed the lambda. I guess this is maybe analogous to the difference between "backwards" vs "forwards" selection?
 ```{r}
-y.l0.CD = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(1,0.001,length=100)),
+y.l0.CD = L0Learn.fit(X,y,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(1,0.001,length=100)),
                       algorithm="CD") 
 
-y.l0.CDPSI = L0Learn.fit(X,x,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(1,0.001,length=100)),algorithm="CDPSI") 
+y.l0.CDPSI = L0Learn.fit(X,y,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(1,0.001,length=100)),algorithm="CDPSI") 
 
-plot(x,main="green=CDPSI; red=CD")
+plot(y,main="green=CDPSI; red=CD")
 lines(predict(y.l0.CD, newx=X, lambda=y.l0.CD$lambda[[1]][50]),col=2) # recovers the soln
 
 lines(predict(y.l0.CDPSI, newx=X, lambda=y.l0.CDPSI$lambda[[1]][50]),col=3) #recovers the soln
@@ -89,10 +92,104 @@ lines(predict(y.l0.CDPSI, newx=X, lambda=y.l0.CDPSI$lambda[[1]][50]),col=3) #rec
 Interestingly(?) the CDPSI does actually recover the correct solution at a different lamdba:
 ```{r }
 y.l0.CDPSI$suppSize[[1]]
-y.l0.CDPSI$suppSize[[1]]
 
-plot(x,main="green=CDPSI; red=CD")
+plot(y,main="green=CDPSI; red=CD")
 lines(predict(y.l0.CD, newx=X, lambda=y.l0.CD$lambda[[1]][99]),col=2) # recovers the soln
 
 lines(predict(y.l0.CDPSI, newx=X, lambda=y.l0.CDPSI$lambda[[1]][99]),col=3) #recovers the soln
 ```
+
+## Lasso 
+
+For comparison we can look at the lasso solution. The L1 penalty
+has the advantage of being convex, but the disadvantage
+that it either over-selects or under-shrinks.
+
+```{r}
+y.glmnet.0 = glmnet(X,y)
+suppsize = apply(y.glmnet.0$beta,2,function(x){sum(abs(x)>0)})
+suppsize
+plot(y, main="lasso solution with 2 changepoints")
+lines(predict(y.glmnet.0, newx=X, s=y.glmnet.0$lambda[4]),col=3)
+plot(y, main="lasso solution with 19 changepoints")
+lines(predict(y.glmnet.0, newx=X, s=y.glmnet.0$lambda[20]),col=3)
+plot(y, main="lasso solution with 50 changepoints")
+lines(predict(y.glmnet.0, newx=X, s=y.glmnet.0$lambda[30]),col=3)
+```
+
+
+For completeness also include trendfilter from genlasso (should be solving same problem as glmnet above)
+```{r}
+y.tf0 = trendfilter(y,ord=0)
+y.tf0.cv = cv.trendfilter(y.tf0)
+opt = which(y.tf0$lambda==y.tf0.cv$lambda.min) #optimal value of lambda
+yhat= y.tf0$fit[,opt]
+plot(y)
+lines(yhat,col=2)
+```
+
+
+# A more challenging example: the wrong basis
+
+The example is designed to be more challenging (it is also more contrived). We use the same simulated data, but with basis functions that are linear instead of steps (basically we apply
+"order 2 trendfiltering" to order 1 data).
+The true solution in this basis is sparse with 4 elements: each changepoint needs two very carefully-balanced coefficients to capture it, which makes this harder than before. 
+
+First create the linear basis:
+```{r}
+X1 = apply(X,2,cumsum) 
+plot(X1[,1])
+plot(X1[,50])
+```
+
+Just to demonstrate that the true mean is represented sparsely in this basis:
+```{r}
+b = rep(0,99)
+b[49] = 8
+b[50] = -8
+b[51] = -8
+b[52] = 8
+plot(y)
+lines(X1 %*% t(t(b)))
+```
+
+
+Now lasso using glmnet. We note it has convergence problems...
+```{r}
+y.glmnet.1 = glmnet(X1,y)
+suppsize = apply(y.glmnet.1$beta,2,function(x){sum(abs(x)>0)})
+suppsize
+plot(y, main="lasso solution with support 4")
+lines(predict(y.glmnet.1, newx=X1, s=y.glmnet.0$lambda[16]),col=3)
+plot(y, main="lasso solution with support 6")
+lines(predict(y.glmnet.1, newx=X1, s=y.glmnet.0$lambda[30]),col=3)
+plot(y, main="lasso solution with support 24")
+lines(predict(y.glmnet.1, newx=X1, s=y.glmnet.0$lambda[51]),col=3)
+```
+
+The genlasso algorithm is better suited to this example:
+```{r}
+y.tf1 = trendfilter(y,ord=1)
+y.tf1.cv = cv.trendfilter(y.tf1)
+opt = which(y.tf1$lambda==y.tf1.cv$lambda.min) #optimal value of lambda
+yhat= y.tf1$fit[,opt]
+plot(y)
+lines(yhat,col=2)
+```
+
+Try L0Learn with this new basis (X1):
+```{r}
+y.l0.CD.1 = L0Learn.fit(X1,y,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.0001,.1,length=100)),
+                      algorithm="CD") 
+
+y.l0.CDPSI.1 = L0Learn.fit(X1,y,penalty="L0",maxSuppSize = 100,autoLambda = FALSE,lambdaGrid = list(seq(0.0001,.1,length=100)),algorithm="CDPSI") 
+
+y.l0.CDPSI.1$suppSize[[1]]
+y.l0.CD.1$suppSize[[1]]
+
+
+plot(y,main="green=CDPSI; red=CD")
+lines(predict(y.l0.CD.1, newx=X1, lambda=y.l0.CD.1$lambda[[1]][50]),col=2) # 
+lines(predict(y.l0.CDPSI.1, newx=X1, lambda=y.l0.CDPSI.1$lambda[[1]][50]),col=3) 
+```
+
